@@ -1,0 +1,16 @@
+@import "tailwindcss";
+@import "preline/variants.css";
+@import "primeicons/primeicons.css";
+
+@theme {
+  --color-primary1: #023f26;
+  
+  
+
+  --font-primary: "Mongolian Baiti", sans-serif;
+  --font-secondary: "Metrophobic", sans-serif;
+}
+
+body {
+  font-family: var(--font-primary);
+}

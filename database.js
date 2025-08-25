@@ -1,0 +1,36 @@
+// src/main/database.js
+import path from "path";
+import Database from "better-sqlite3";
+
+//migrations
+import { createUsersTable } from "./database/migrations/users.js";
+import { createTimeLogsTable } from "./database/migrations/time_logs.js";
+import { createAccountRolesTable } from "./database/migrations/account_roles.js";
+import { createRoleBenefitsTable } from "./database/migrations/role_benefits.js";
+import { createSessionProfilesTable } from "./database/migrations/session_profiles.js";
+import { createSessionConfigTable } from "./database/migrations/session_config.js";
+import { createPromosTable } from "./database/migrations/promos.js";
+import { createPivotPromosToUserTable } from "./database/migrations/pivot_promos_to_user.js";
+import { createAuditTrailsTable } from "./database/migrations/audit_trails.js";
+
+// Store DB in app’s userData directory
+const dbPath = path.join(process.cwd(), "database/app.db");
+const db = new Database(dbPath);
+
+createAuditTrailsTable(db);
+createSessionConfigTable(db);
+createSessionProfilesTable(db);
+createAccountRolesTable(db);
+createPromosTable(db);
+createUsersTable(db);
+createPivotPromosToUserTable(db);
+createTimeLogsTable(db);
+createRoleBenefitsTable(db);
+
+
+
+
+
+
+
+export default db;

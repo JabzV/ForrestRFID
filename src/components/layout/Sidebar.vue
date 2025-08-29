@@ -1,7 +1,7 @@
 <template>
   <div
     id="hs-sidebar-content-push-to-mini-sidebar"
-    class="hs-overlay hs-overlay-minified:w-13 w-64 transition-all duration-400 transform h-full block overflow-x-hidden fixed top-0 start-0 bottom-0 z-60 bg-white border-e border-gray-200"
+    class="hs-overlay hs-overlay-minified:w-13 w-64 transition-all duration-300 transform h-full block overflow-x-hidden fixed top-0 start-0 bottom-0 z-60 bg-white border-e border-gray-200"
     role="dialog"
     tabindex="-1"
     aria-label="Sidebar"
@@ -82,20 +82,12 @@
             >Navigation</span
           >
           <ul class="flex flex-col gap-1 hs-overlay-minified:gap-2">
-            <SidebarContent icon="pi pi-home" label="Dashboard" href="/" />
-
-            <SidebarContent icon="pi pi-users" label="Users" href="/users" />
-
             <SidebarContent
-              icon="pi pi-history"
-              label="History"
-              href="/history"
-            />
-
-            <SidebarContent
-              icon="pi pi-cog"
-              label="Settings"
-              href="/settings"
+              v-for="route in navigationRoutes"
+              :key="route.href"
+              :icon="route.icon"
+              :label="route.label"
+              :href="route.href"
             />
           </ul>
         </div>
@@ -109,6 +101,9 @@
 <script setup>
 import { onMounted } from "vue";
 import SidebarContent from "../composables/Sidebar/SidebarContent.vue";
+import { useNavigation } from "../../services/useNavigation.js";
+
+const { navigationRoutes } = useNavigation();
 
 onMounted(() => {
   setTimeout(() => window.HSStaticMethods.autoInit(), 100);

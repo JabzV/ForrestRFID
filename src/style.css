@@ -3,9 +3,20 @@
 @import "primeicons/primeicons.css";
 
 @theme {
+  --color-background: #f9fafb;
   --color-primary1: #023f26;
+
+  --color-success: #54b14e;
+  --color-success-light: #bffdb5;
+  --color-success-dark: #40803a;
+
+  --color-warning: #da7010;
+  --color-warning-light: #ffebd5;
+  --color-warning-dark: #b35400;
   
-  
+  --color-danger: #ed3535;
+  --color-danger-light: #ffdede;
+  --color-danger-dark: #b32626;
 
   --font-primary: "Mongolian Baiti", sans-serif;
   --font-secondary: "Metrophobic", sans-serif;
@@ -13,4 +24,5 @@
 
 body {
   font-family: var(--font-primary);
+  overflow-x: hidden;
 }

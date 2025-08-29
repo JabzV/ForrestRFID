@@ -1,17 +1,23 @@
 <template>
   <button
-    type="button"
-    class="flex items-center justify-center w-8 h-8 text-black hover:text-gray-600 transition-colors"
-    @click="props.onClick"
+    class="rounded-[10px] border-none cursor-pointer flex items-center justify-center transition-all duration-200 hover:-translate-y-1 hover:shadow-md"
+    :class="`${buttonColor} hover:${hoverColor} ${containerSize}`"
+    @click="onClick"
   >
-    <i :class="`${icon}`" :style="`font-size: ${size}rem`"></i>
+    <i :class="`${icon} ${iconColor}`" :style="`font-size: ${iconSize}rem`"></i>
   </button>
 </template>
 
 <script setup>
 const props = defineProps({
   icon: String,
-  size: String,
+  iconSize: String,
+  iconColor: String,
   onClick: Function,
+  buttonColor: String,
+  hoverColor: String,
+  containerSize: String,
 });
 </script>
+
+<style scoped></style>

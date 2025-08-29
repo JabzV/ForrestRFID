@@ -1,19 +1,22 @@
 <template>
-  <div
-    class="flex items-center justify-between px-6 py-4 bg-white border-b border-gray-200 h-18"
-  >
+  <div class="flex items-center justify-between px-6 py-4 bg-background h-18">
     <!-- Left Section -->
     <div class="flex items-center gap-4">
-      <IconButton icon="pi pi-arrow-left" size="1.3" @click="clickBackArrow" />
-      <h1 class="text-2xl font-semibold text-gray-800">Dashboard</h1>
+      <IconButton
+        v-if="title !== 'Dashboard'"
+        icon="pi pi-arrow-left"
+        size="1.3"
+        @click="clickBackArrowButton"
+      />
+      <h1 class="text-2xl font-semibold text-gray-800">{{ title }}</h1>
     </div>
 
     <!-- Right Section -->
     <div class="flex items-center gap-14">
       <!-- Action Buttons -->
-      <div class="flex items-center gap-16">
-        <IconButton icon="pi pi-cog" size="1.3" @click="clickCog" />
-        <IconButton icon="pi pi-bell" size="1.2" @click="clickBell" />
+      <div class="flex items-center gap-12">
+        <IconButton icon="pi pi-cog" size="1.3" @click="clickCogButton" />
+        <IconButton icon="pi pi-bell" size="1.2" @click="clickBellButton" />
       </div>
 
       <!-- Add Session Button -->
@@ -29,19 +32,26 @@
 </template>
 
 <script setup>
-import IconButton from "../shared/IconButton.vue";
+import IconButton from "../shared/IconTextButton.vue";
+import { useRouter } from "vue-router";
 
-//functions
-const clickCog = () => {
+const router = useRouter();
+
+const props = defineProps({
+  title: String,
+});
+
+//Button functions
+const clickCogButton = () => {
   console.log("cog clicked");
 };
 
-const clickBell = () => {
+const clickBellButton = () => {
   console.log("bell clicked");
 };
 
-const clickBackArrow = () => {
-  console.log("back arrow clicked");
+const clickBackArrowButton = () => {
+  router.push("/");
 };
 </script>
 

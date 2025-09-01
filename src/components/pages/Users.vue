@@ -1,5 +1,5 @@
 <template>
-  <div class="p-8 bg-background min-h-screen w-full overflow-x-hidden">
+  <div class="p-8 bg-background w-full overflow-x-hidden">
     <div class="flex flex-col gap-4 w-full">
       <UserCard
         v-for="user in users"
@@ -51,12 +51,14 @@ const sampleDialog = [
     placeholder: "First Name",
     type: "text",
     label: "First Name",
+    isRequired: true,
   },
   {
     field: "last_name",
     placeholder: "Last Name",
     type: "text",
     label: "Last Name",
+    isRequired: true,
   },
   {
     field: "contact_number",
@@ -67,7 +69,7 @@ const sampleDialog = [
   },
   {
     field: "date_of_birth",
-    placeholder: "Select Date of Birth",
+    placeholder: "mm/dd/yyyy",
     type: "date",
     label: "Date of Birth",
   },
@@ -87,6 +89,7 @@ const sampleDialog = [
     label: "Account Role",
     options: sampleAccountRoles,
     customClass: "col-span-2",
+    isRequired: true,
   },
 ];
 </script>

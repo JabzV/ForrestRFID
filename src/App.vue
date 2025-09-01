@@ -1,5 +1,5 @@
 <template>
-  <div class="app flex h-screen">
+  <div class="app flex h-screen bg-background">
     <Sidebar />
     <main
       class="flex-1 ml-64 hs-overlay-minified:ml-13 transition-all duration-300"

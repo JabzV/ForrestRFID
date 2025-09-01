@@ -2,11 +2,10 @@
   <button
     type="button"
     class="flex items-center justify-center text-black rounded-full cursor-pointer"
+    @click="onClick"
     :class="`${containerSize} ${
       hoverEffect ? 'hover:bg-gray-200 hover: transition-all duration-200' : ''
     }`"
-    :data-hs-overlay="canHideOverlay ? '#hs-scale-animation-modal' : null"
-    @click="props.onClick"
   >
     <i :class="`${icon}`" :style="`font-size: ${iconSize}rem`"></i>
   </button>
@@ -19,6 +18,5 @@ const props = defineProps({
   containerSize: String,
   onClick: Function,
   hoverEffect: Boolean,
-  canHideOverlay: Boolean,
 });
 </script>

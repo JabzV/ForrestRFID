@@ -1,5 +1,6 @@
 <template>
   <div
+    ref="modal"
     id="hs-scale-animation-modal"
     class="hs-overlay hidden size-full fixed top-0 start-0 z-80 overflow-x-hidden overflow-y-auto pointer-events-none"
     role="dialog"
@@ -8,7 +9,7 @@
   >
     <div
       class="hs-overlay-open:opacity-100 opacity-0 transition-opacity duration-300 fixed inset-0 bg-gray-800/40"
-      data-hs-overlay="#hs-scale-animation-modal"
+      @click="closeModal"
     ></div>
 
     <div
@@ -27,7 +28,6 @@
             containerSize="h-8 w-8"
             hoverEffect="true"
             @click="closeModal"
-            :canHideOverlay="true"
           />
         </div>
         <form
@@ -45,18 +45,18 @@
             v-model="payload[item.field]"
             :options="item.options"
             :pattern="item.pattern"
+            :isRequired="item.isRequired"
           />
+          <div class="col-span-2 flex justify-center items-center pt-2">
+            <button
+              type="submit"
+              class="bg-primary1/95 text-white px-6 py-2 w-full rounded-xl hover:bg-primary1/80 transition-all duration-200 active:scale-95 active:bg-primary1 cursor-pointer"
+              @click="printPayload"
+            >
+              Submit
+            </button>
+          </div>
         </form>
-        <div class="justify-center items-center gap-x-2 py-4 px-4">
-          <button
-            type="button"
-            class="bg-primary1/95 text-white px-6 py-2 w-full rounded-xl hover:bg-primary1/80 transition-all duration-200 active:scale-95 active:bg-primary1 cursor-pointer"
-            data-hs-overlay="#hs-scale-animation-modal"
-            @click="printPayload"
-          >
-            Submit
-          </button>
-        </div>
       </div>
     </div>
   </div>
@@ -65,6 +65,8 @@
 import { onMounted, ref } from "vue";
 import ClickableIcon from "../../shared/Clickables/ClickableIcon.vue";
 import CustomInput from "../../shared/Forms/CustomInput.vue";
+
+const modal = ref(null);
 
 const props = defineProps({
   title: String,
@@ -79,6 +81,7 @@ const formRef = ref(null);
 const printPayload = () => {
   if (formRef.value.reportValidity()) {
     console.log(payload.value);
+    closeModal(); // Close modal after successful submit
   } else {
     alert("Please fill in all fields");
   }
@@ -87,6 +90,7 @@ const printPayload = () => {
 const closeModal = () => {
   // Reset payload when closing modal
   payload.value = {};
+  window.HSOverlay.close(modal.value);
 };
 
 onMounted(() => {

@@ -106,7 +106,11 @@ import { useNavigation } from "../../services/useNavigation.js";
 const { navigationRoutes } = useNavigation();
 
 onMounted(() => {
-  setTimeout(() => window.HSStaticMethods.autoInit(), 100);
+  setTimeout(() => {
+    if (window.HSStaticMethods) {
+      window.HSStaticMethods.autoInit();
+    }
+  }, 100);
 });
 </script>
 

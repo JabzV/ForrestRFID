@@ -1,0 +1,1 @@
+export const smartConvert = (v) => (isNaN(v) ? v : Number(v));

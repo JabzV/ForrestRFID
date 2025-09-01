@@ -5,7 +5,7 @@
     :class="{ 'bg-primary1/25': isActive }"
   >
     <i :class="`${icon}`" style="font-size: 1.2rem"></i>
-    <span class="hs-overlay-minified:hidden">{{ label }}</span>
+    <span class="hs-overlay-minified:hidden text-lg">{{ label }}</span>
   </RouterLink>
 </template>
 

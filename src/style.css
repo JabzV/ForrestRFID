@@ -1,6 +1,9 @@
 @import "tailwindcss";
-@import "preline/variants.css";
+@import "../node_modules/preline/variants.css";
 @import "primeicons/primeicons.css";
+
+
+@plugin "@tailwindcss/forms"; 
 
 @theme {
   --color-background: #f9fafb;
@@ -9,6 +12,7 @@
   --color-success: #54b14e;
   --color-success-light: #bffdb5;
   --color-success-dark: #40803a;
+  --color-success-active: #467a46;
 
   --color-warning: #da7010;
   --color-warning-light: #ffebd5;
@@ -26,3 +30,13 @@ body {
   font-family: var(--font-primary);
   overflow-x: hidden;
 }
+
+input:invalid {
+  border-color: var(--color-danger);
+  outline: none;
+}
+
+
+
+
+

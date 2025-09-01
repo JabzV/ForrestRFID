@@ -1,6 +1,6 @@
 <template>
   <div
-    class="flex flex-col lg:flex-row items-start lg:items-center bg-[#fdfeff] border border-[#dedede] rounded-[20px] p-6 lg:p-8 gap-6 lg:gap-8 min-h-[126px] shadow-sm hover:shadow-md transition-shadow duration-200 w-full"
+    class="flex flex-col lg:flex-row items-start lg:items-center bg-[#fdfeff] border border-gray-300 rounded-[20px] p-6 lg:px-8 lg:py-6 gap-6 lg:gap-8 min-h-26 transition-all duration-300 w-full"
   >
     <!-- User icon and name section -->
     <div class="flex items-center gap-5 w-full lg:w-auto lg:flex-shrink-0">
@@ -14,7 +14,7 @@
       <HeaderAndSubtext
         :header="user.name"
         :subtext="`RFID: ${user.rfid}`"
-        :semibold="true"
+        textSize="text-2xl"
       />
     </div>
 
@@ -67,10 +67,9 @@
     >
       <IconButton
         icon="pi pi-id-card"
-        iconSize="1.1"
+        iconSize="1.2"
         iconColor="text-success"
         buttonColor="bg-success-light"
-        hoverColor="bg-success-dark"
         containerSize="w-11 h-11"
         @click="$emit('view', user)"
       />
@@ -80,7 +79,6 @@
         iconSize="1"
         iconColor="text-warning"
         buttonColor="bg-warning-light"
-        hoverColor="bg-warning-dark"
         containerSize="w-11 h-11"
         @click="$emit('edit', user)"
       />
@@ -90,7 +88,6 @@
         iconSize="1"
         iconColor="text-danger"
         buttonColor="bg-danger-light"
-        hoverColor="bg-danger-dark"
         containerSize="w-11 h-11"
         @click="$emit('delete', user)"
       />
@@ -99,9 +96,9 @@
 </template>
 
 <script setup>
-import IconButton from "@/components/shared/IconButton.vue";
-import AvatarInitials from "@/components/shared/AvatarInitials.vue";
-import HeaderAndSubtext from "@/components/shared/HeaderAndSubtext.vue";
+import IconButton from "@/components/shared/Clickables/IconButton.vue";
+import AvatarInitials from "@/components/shared/DisplayText/AvatarInitials.vue";
+import HeaderAndSubtext from "@/components/shared/DisplayText/HeaderAndSubtext.vue";
 
 defineProps({
   user: {

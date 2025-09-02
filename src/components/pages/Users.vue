@@ -11,7 +11,11 @@
       />
     </div>
 
-    <CustomDialog title="Create New User" :dialogFields="sampleDialog" />
+    <CustomDialog
+      title="Create New User"
+      :dialogFields="sampleDialog"
+      @submit="handleSubmit"
+    />
   </div>
 </template>
 
@@ -21,7 +25,8 @@ import { onMounted } from "vue";
 import UserCard from "../composables/Cards/UserCard.vue";
 import CustomDialog from "../composables/Dialogs/CustomDialog.vue";
 import { useUserFunctions } from "../../functions/userFunctions";
-import { useTopbarButtonState } from "../../../store/topbarButtonState";
+import { useTopbarButtonState } from "../../../store/vueStore/topbarButtonState";
+import { ipcHandle } from "../../../ipc/ipcHandler";
 
 const { users, handleViewButton, handleEditButton, handleDeleteButton } =
   useUserFunctions();
@@ -29,6 +34,14 @@ const { users, handleViewButton, handleEditButton, handleDeleteButton } =
 onMounted(() => {
   useTopbarButtonState().setButtonState("Add User");
 });
+
+const handleSubmit = async (data) => {
+  console.log("HANDLED SUBMIT", data);
+  // Convert reactive Vue object to plain object to avoid cloning issues
+  const cleanData = JSON.parse(JSON.stringify(data));
+  const result = await ipcHandle("createUser", cleanData);
+  console.log(result);
+};
 
 const sampleAccountRoles = [
   {
@@ -68,7 +81,7 @@ const sampleDialog = [
     label: "Contact Number",
   },
   {
-    field: "date_of_birth",
+    field: "birthday",
     placeholder: "mm/dd/yyyy",
     type: "date",
     label: "Date of Birth",

@@ -66,6 +66,8 @@ import { onMounted, ref } from "vue";
 import ClickableIcon from "../../shared/Clickables/ClickableIcon.vue";
 import CustomInput from "../../shared/Forms/CustomInput.vue";
 
+const emit = defineEmits(["submit"]);
+
 const modal = ref(null);
 
 const props = defineProps({
@@ -80,7 +82,10 @@ const formRef = ref(null);
 
 const printPayload = () => {
   if (formRef.value.reportValidity()) {
+    payload.value.rfid = 20250921;
+    payload.value.email = "test@test.com";
     console.log(payload.value);
+    emit("submit", payload.value);
     closeModal(); // Close modal after successful submit
   } else {
     alert("Please fill in all fields");

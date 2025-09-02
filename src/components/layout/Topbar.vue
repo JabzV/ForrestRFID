@@ -51,7 +51,7 @@
 import ClickableIcon from "../shared/Clickables/ClickableIcon.vue";
 import { useRouter } from "vue-router";
 import { onMounted } from "vue";
-import { useTopbarButtonState } from "../../../store/topbarButtonState";
+import { useTopbarButtonState } from "../../../store/vueStore/topbarButtonState";
 
 const router = useRouter();
 const topbarButtonState = useTopbarButtonState();

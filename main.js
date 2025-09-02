@@ -2,6 +2,7 @@ import { app, BrowserWindow } from "electron/main";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import db from "./database.js";
+import { registerUserIpc } from "./ipc/userIpc.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -11,7 +12,9 @@ function createWindow() {
     width: 800,
     height: 600,
     webPreferences: {
-      preload: path.join(__dirname, "preload.js"),
+      nodeIntegration: false,
+      contextIsolation: true,
+      preload: path.join(__dirname, "preload.cjs"),
     },
   });
 
@@ -23,6 +26,7 @@ function createWindow() {
 }
 
 app.whenReady().then(() => {
+  registerUserIpc();
   createWindow();
 
   app.on("activate", () => {

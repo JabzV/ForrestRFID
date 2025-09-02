@@ -17,6 +17,7 @@ import { createAuditTrailsTable } from "./database/migrations/audit_trails.js";
 const dbPath = path.join(process.cwd(), "database/app.db");
 const db = new Database(dbPath);
 
+//migrations
 createAuditTrailsTable(db);
 createSessionConfigTable(db);
 createSessionProfilesTable(db);
@@ -26,11 +27,6 @@ createUsersTable(db);
 createPivotPromosToUserTable(db);
 createTimeLogsTable(db);
 createRoleBenefitsTable(db);
-
-
-
-
-
 
 
 export default db;

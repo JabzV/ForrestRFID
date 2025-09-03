@@ -23,20 +23,15 @@
 </template>
 
 <script setup>
-import { onMounted } from "vue";
 import { smartConvert } from "../../../services/utils";
 
 const props = defineProps({
   placeholder: String,
   options: Array,
-  modelValue: String,
+  modelValue: [String, Number],
   customClass: String,
   value: String,
   isRequired: Boolean,
-});
-
-onMounted(() => {
-  console.log(props.modelValue);
 });
 
 defineEmits(["update:modelValue"]);

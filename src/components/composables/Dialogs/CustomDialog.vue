@@ -23,6 +23,7 @@
             {{ title }}
           </h3>
           <ClickableIcon
+            v-if="closable"
             icon="pi pi-times"
             iconSize="1"
             containerSize="h-8 w-8"
@@ -30,33 +31,8 @@
             @click="closeModal"
           />
         </div>
-        <form
-          ref="formRef"
-          @submit.prevent="printPayload"
-          class="p-4 overflow-y-auto grid grid-cols-1 lg:grid-cols-2 gap-4"
-        >
-          <CustomInput
-            v-for="item in dialogFields"
-            :key="item.field"
-            :placeholder="item.placeholder"
-            :type="item.type"
-            :customClass="item.customClass"
-            :label="item.label"
-            v-model="payload[item.field]"
-            :options="item.options"
-            :pattern="item.pattern"
-            :isRequired="item.isRequired"
-          />
-          <div class="col-span-2 flex justify-center items-center pt-2">
-            <button
-              type="submit"
-              class="bg-primary1/95 text-white px-6 py-2 w-full rounded-xl hover:bg-primary1/80 transition-all duration-200 active:scale-95 active:bg-primary1 cursor-pointer"
-              @click="printPayload"
-            >
-              Submit
-            </button>
-          </div>
-        </form>
+
+        <slot />
       </div>
     </div>
   </div>
@@ -64,47 +40,27 @@
 <script setup>
 import { onMounted, ref } from "vue";
 import ClickableIcon from "../../shared/Clickables/ClickableIcon.vue";
-import CustomInput from "../../shared/Forms/CustomInput.vue";
-
-const emit = defineEmits(["submit"]);
 
 const modal = ref(null);
 
 const props = defineProps({
   title: String,
-  content: String,
-  dialogFields: Array,
+  closable: Boolean,
 });
 
-const payload = ref({});
-
-const formRef = ref(null);
-
-const printPayload = () => {
-  if (formRef.value.reportValidity()) {
-    payload.value.rfid = 20250921;
-    payload.value.email = "test@test.com";
-    console.log(payload.value);
-    emit("submit", payload.value);
-    closeModal(); // Close modal after successful submit
-  } else {
-    alert("Please fill in all fields");
-  }
-};
-
 const closeModal = () => {
-  // Reset payload when closing modal
-  payload.value = {};
   window.HSOverlay.close(modal.value);
 };
 
-onMounted(() => {
-  setTimeout(() => {
-    if (window.HSStaticMethods) {
-      window.HSStaticMethods.autoInit();
-    }
-  }, 100);
-});
+// onMounted(() => {
+//   setTimeout(() => {
+//     if (window.HSStaticMethods) {
+//       window.HSStaticMethods.autoInit();
+//     }
+//   }, 100);
+// });
+
+defineExpose({ closeModal });
 </script>
 
 <style scoped></style>

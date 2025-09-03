@@ -1,61 +1,86 @@
 <template>
-  <div class="flex flex-col gap-1" :class="customClass">
-    <label v-if="label" for="inputLabel" class="text-md pl-1">{{
-      label
-    }}</label>
+  <form
+    ref="formRef"
+    class="p-4 overflow-y-auto grid grid-cols-1 lg:grid-cols-2 gap-4"
+  >
+    <div
+      v-for="item in dialogFields"
+      :key="item.field"
+      class="w-full flex flex-col gap-1"
+      :class="item.divClass"
+    >
+      <label v-if="item.label" for="inputLabel" class="text-md pl-1">{{
+        item.label
+      }}</label>
 
-    <CustomDropdown
-      v-if="type === 'dropdown'"
-      :options="options"
-      :placeholder="placeholder"
-      :modelValue="modelValue"
-      :customClass="customInputClass"
-      @update:modelValue="$emit('update:modelValue', $event)"
-      :isRequired="isRequired"
-    />
+      <CustomDropdown
+        v-if="item.type === 'dropdown'"
+        :options="item.options"
+        :placeholder="item.placeholder"
+        :modelValue="payload[item.field]"
+        :customClass="item.customClass"
+        :isRequired="item.isRequired"
+        @update:modelValue="payload[item.field] = $event"
+      />
 
-    <input
-      v-else-if="type === 'date'"
-      :value="modelValue"
-      @input="$emit('update:modelValue', $event.target.value)"
-      type="text"
-      :placeholder="placeholder"
-      onfocus="(this.type='date')"
-      onblur="if(!this.value) this.type='text'"
-      class="placeholder-gray-400 sm:py-5 px-4 h-10 block w-full text-black border border-gray-300 rounded-xl sm:text-sm focus:border-none focus:ring-1 focus:ring-primary1 disabled:opacity-50 disabled:pointer-events-none outline-none"
-      :class="customInputClass"
-      :pattern="pattern"
-      :required="isRequired"
-    />
+      <input
+        v-else-if="item.type === 'date'"
+        :value="payload[item.field]"
+        type="text"
+        :placeholder="item.placeholder"
+        onfocus="(this.type='date')"
+        onblur="if(!this.value) this.type='text'"
+        class="placeholder-gray-400 sm:py-5 px-4 h-10 block w-full text-black border border-gray-300 rounded-xl sm:text-sm focus:border-none focus:ring-1 focus:ring-primary1 disabled:opacity-50 disabled:pointer-events-none outline-none"
+        :class="item.customClass"
+        :pattern="item.pattern"
+        :required="item.isRequired"
+        @input="payload[item.field] = $event.target.value"
+      />
 
-    <input
-      v-else
-      :type="type"
-      :value="modelValue"
-      @input="$emit('update:modelValue', $event.target.value)"
-      class="sm:py-5 px-4 h-10 block w-full border border-gray-300 rounded-xl sm:text-sm focus:border-none focus:ring-1 focus:ring-primary1 disabled:opacity-50 disabled:pointer-events-none outline-none"
-      :class="customInputClass"
-      :placeholder="placeholder"
-      :pattern="pattern"
-      :required="isRequired"
-    />
-  </div>
+      <input
+        v-else
+        :type="item.type"
+        :value="payload[item.field]"
+        class="sm:py-5 px-4 h-10 block w-full border border-gray-300 rounded-xl sm:text-sm focus:border-none focus:ring-1 focus:ring-primary1 disabled:opacity-50 disabled:pointer-events-none outline-none"
+        :class="item.customClass"
+        :placeholder="item.placeholder"
+        :pattern="item.pattern"
+        :required="item.isRequired"
+        @input="payload[item.field] = $event.target.value"
+      />
+    </div>
+    <div class="col-span-1 lg:col-span-2 flex justify-center items-center pt-3">
+      <button
+        type="button"
+        class="bg-primary1/95 text-white px-6 py-2 w-full rounded-xl hover:bg-primary1/80 transition-all duration-200 active:scale-95 active:bg-primary1 cursor-pointer"
+        @click="submitPayload"
+      >
+        Submit
+      </button>
+    </div>
+  </form>
 </template>
 
 <script setup>
 import CustomDropdown from "./CustomDropdown.vue";
+import { ref } from "vue";
 
 const props = defineProps({
-  placeholder: String,
-  type: String,
-  modelValue: String,
   customClass: String,
   customInputClass: String,
-  label: String,
-  pattern: String,
-  options: Array,
-  isRequired: Boolean,
+  dialogFields: Array,
 });
 
-defineEmits(["update:modelValue"]);
+const emit = defineEmits(["submit:data"]);
+
+const formRef = ref(null);
+const payload = ref({});
+
+const submitPayload = () => {
+  if (formRef.value.reportValidity()) {
+    emit("submit:data", payload.value);
+  } else {
+    alert("Please fill in all fields");
+  }
+};
 </script>

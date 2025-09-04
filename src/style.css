@@ -11,6 +11,7 @@
 
   --color-success: #54b14e;
   --color-success-light: #bffdb5;
+  --color-success-lightest: #e5ffe1;
   --color-success-dark: #40803a;
   --color-success-active: #467a46;
 
@@ -34,6 +35,38 @@ body {
 input:invalid:not(:placeholder-shown) {
   border-color: var(--color-danger);
   outline: none;
+}
+
+
+/* Toast Animations */
+@keyframes toast-pop-in {
+  0% {
+    opacity: 0;
+    transform: translateX(100%) scale(0.8);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+@keyframes toast-fade-out {
+  0% {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(100%) scale(0.9);
+  }
+}
+
+.animate-toast-in {
+  animation: toast-pop-in 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+.animate-toast-out {
+  animation: toast-fade-out 0.3s ease-in-out forwards;
 }
 
 

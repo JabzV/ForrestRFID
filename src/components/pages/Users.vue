@@ -10,15 +10,19 @@
         @delete="handleDeleteButton"
       />
     </div>
-    <CustomDialog title="Create New User" :closable="true" ref="inputDialog">
+    <CustomDialog
+      :title="isScanning ? 'Scanning RFID' : 'Create New User'"
+      :closable="isScanning ? false : true"
+      ref="inputDialog"
+    >
       <CustomInput
-        v-show="!isScanning"
+        v-if="!isScanning"
         :dialogFields="sampleDialog"
         @submit:data="handleSubmit"
       />
-      <div v-show="isScanning">
-        <h1 class="text-2xl font-bold">SCANNING...</h1>
-        <input id="rfidInput" maxlength="10" />
+      <div v-if="isScanning">
+        <input id="rfidInput" maxlength="10" class="opacity-0 h-1" />
+        <ScanningDisplay :timeout="scanTimer" @timeout="handleScanTimeout" />
       </div>
     </CustomDialog>
   </div>
@@ -27,6 +31,7 @@
 <script setup>
 import { onMounted, ref, nextTick } from "vue";
 
+import ScanningDisplay from "../composables/Display/ScanningDIsplay.vue";
 import UserCard from "../composables/Cards/UserCard.vue";
 import CustomDialog from "../composables/Dialogs/CustomDialog.vue";
 import CustomInput from "../shared/Forms/CustomInput.vue";
@@ -35,12 +40,18 @@ import { useUserFunctions } from "../../functions/userFunctions";
 import { useTopbarButtonState } from "../../../store/vueStore/topbarButtonState";
 import { ipcHandle } from "../../../ipc/ipcHandler";
 import { rfidScanner } from "../../services/utils";
+import { useToast } from "../../services/useToast";
 
 const { users, handleViewButton, handleEditButton, handleDeleteButton } =
   useUserFunctions();
 
+let timerValue = 15000;
+let rfidScannerPromise = null;
+
 const isScanning = ref(false);
 const inputDialog = ref(null);
+const { toast } = useToast();
+const scanTimer = ref(timerValue); // 30 seconds timeout
 
 onMounted(() => {
   useTopbarButtonState().setButtonState("Add User");
@@ -48,30 +59,48 @@ onMounted(() => {
 
 const handleSubmit = async (data) => {
   isScanning.value = true;
-  rfidScanner("rfidInput").then(
+  rfidScannerPromise = rfidScanner("rfidInput");
+
+  rfidScannerPromise.then(
     async (rfid) => {
+      if (!isScanning.value) return; // Check if scanning was cancelled
+
       data.rfid = rfid;
       const cleanData = JSON.parse(JSON.stringify(data));
       try {
         const result = await ipcHandle("createUser", cleanData);
         inputDialog.value.closeModal();
-        console.log("Success");
+        toast("User added successfully", "success");
         isScanning.value = false;
-        rfidInput.value = "";
+        document.getElementById("rfidInput").value = "";
+        scanTimer.value = timerValue;
       } catch (error) {
+        inputDialog.value.closeModal();
         isScanning.value = false;
         if (error.message.includes("UNIQUE constraint failed: users.rfid")) {
-          console.log("RFID already exists");
+          toast("RFID already exists", "danger");
         } else {
-          console.log(error);
+          toast(error, "danger");
         }
       }
     },
     (error) => {
+      if (!isScanning.value) return; // Check if scanning was cancelled
+
+      inputDialog.value.closeModal();
       isScanning.value = false;
-      console.log(error);
+      toast(error, "danger");
+      scanTimer.value = timerValue;
     }
   );
+};
+
+const handleScanTimeout = () => {
+  if (isScanning.value) {
+    isScanning.value = false;
+    inputDialog.value.closeModal();
+    toast("Scanning timeout - Please try again", "danger");
+  }
 };
 
 const sampleAccountRoles = [

@@ -63,6 +63,7 @@
 
 <script setup>
 import CustomDropdown from "./CustomDropdown.vue";
+import { useToast } from "../../../services/useToast";
 import { ref } from "vue";
 
 const props = defineProps({
@@ -75,12 +76,13 @@ const emit = defineEmits(["submit:data"]);
 
 const formRef = ref(null);
 const payload = ref({});
+const { toast } = useToast();
 
 const submitPayload = () => {
   if (formRef.value.reportValidity()) {
     emit("submit:data", payload.value);
   } else {
-    alert("Please fill in all fields");
+    toast("Please fill in required fields", "danger");
   }
 };
 </script>

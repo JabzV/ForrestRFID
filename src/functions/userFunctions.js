@@ -55,8 +55,7 @@ export function useUserFunctions() {
         users, 
         handleViewButton, 
         handleEditButton, 
-        handleDeleteButton,
-        addUser
+        handleDeleteButton
     };
 }
 

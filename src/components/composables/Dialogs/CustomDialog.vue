@@ -53,7 +53,6 @@ const props = defineProps({
 });
 
 const openModal = () => {
-  console.log("Opening modal:", modal.value);
   if (window.HSOverlay && modal.value) {
     window.HSOverlay.open(modal.value);
   } else {
@@ -62,7 +61,6 @@ const openModal = () => {
 };
 
 const closeModal = () => {
-  console.log("Closing modal:", modal.value);
   if (window.HSOverlay && modal.value) {
     window.HSOverlay.close(modal.value);
   }

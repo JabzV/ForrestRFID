@@ -9,23 +9,17 @@
         <i :class="iconClass" class="text-xl text-success"></i>
         <h3 class="text-gray-800 text-xl font-semibold">{{ title }}</h3>
       </div>
-      <div class="ml-auto flex items-center gap-3">
-        <input
-          v-if="showInputField"
-          v-model="inputValue"
-          :placeholder="inputPlaceholder"
-          :type="inputType"
-          class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary1 focus:border-transparent"
-          @input="$emit('input-change', inputValue)"
-        />
-        <button
-          v-if="showAddButton"
-          class="bg-primary1 text-white px-5 py-2 rounded-2xl text-sm font-medium hover:bg-primary1/90 transition-colors cursor-pointer"
-          @click="$emit('add')"
-        >
-          {{ addButtonText }}
-        </button>
-      </div>
+      <button
+        v-if="showAddButton"
+        class="ml-auto bg-primary1 text-white px-5 py-2 rounded-2xl text-sm font-medium transition-colors"
+        :class="
+          disableButton ? 'opacity-50' : 'cursor-pointer hover:bg-primary1/90'
+        "
+        :disabled="disableButton"
+        @click="$emit('add')"
+      >
+        {{ addButtonText }}
+      </button>
     </div>
 
     <!-- Divider -->
@@ -39,10 +33,6 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
-
-const inputValue = ref('');
-
 defineProps({
   title: {
     type: String,
@@ -60,18 +50,6 @@ defineProps({
     type: String,
     default: "Add Profile",
   },
-  showInputField: {
-    type: Boolean,
-    default: false,
-  },
-  inputPlaceholder: {
-    type: String,
-    default: "Enter value...",
-  },
-  inputType: {
-    type: String,
-    default: "text",
-  },
   customClass: {
     type: String,
     default: "",
@@ -80,7 +58,11 @@ defineProps({
     type: String,
     default: "max-h-full",
   },
+  disableButton: {
+    type: Boolean,
+    default: false,
+  },
 });
 
-defineEmits(["add", "input-change"]);
+defineEmits(["add"]);
 </script>

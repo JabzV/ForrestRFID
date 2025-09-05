@@ -37,10 +37,7 @@
         v-if="topbarButtonState.buttonLabel"
         type="button"
         class="bg-primary1 text-white px-8 py-3 rounded-full font-medium hover:bg-primary1/90 transition-all duration-200 hover:scale-102 active:scale-95 active:contrast-90 cursor-pointer"
-        aria-haspopup="dialog"
-        aria-expanded="false"
-        aria-controls="hs-scale-animation-modal"
-        data-hs-overlay="#hs-scale-animation-modal"
+        @click="clickTopbarButton"
       >
         {{ topbarButtonState.buttonLabel }}
       </button>
@@ -72,6 +69,10 @@ const clickRefreshButton = () => {
 
 const clickBackArrowButton = () => {
   router.push("/");
+};
+
+const clickTopbarButton = () => {
+  topbarButtonState.triggerButtonFunction();
 };
 
 onMounted(() => {

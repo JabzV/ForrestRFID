@@ -29,7 +29,7 @@
 </template>
 
 <script setup>
-import { onMounted, ref, nextTick } from "vue";
+import { onMounted, ref } from "vue";
 
 import ScanningDisplay from "../composables/Display/ScanningDIsplay.vue";
 import UserCard from "../composables/Cards/UserCard.vue";
@@ -54,8 +54,21 @@ const { toast } = useToast();
 const scanTimer = ref(timerValue); // 30 seconds timeout
 
 onMounted(() => {
-  useTopbarButtonState().setButtonState("Add User");
+  useTopbarButtonState().setButtonState("Add User", openModal);
 });
+
+const openModal = () => {
+  if (inputDialog.value) {
+    console.log("Opening modal");
+    inputDialog.value.openModal();
+  }
+};
+
+const closeModal = () => {
+  if (inputDialog.value) {
+    inputDialog.value.closeModal();
+  }
+};
 
 const handleSubmit = async (data) => {
   isScanning.value = true;
@@ -69,13 +82,13 @@ const handleSubmit = async (data) => {
       const cleanData = JSON.parse(JSON.stringify(data));
       try {
         const result = await ipcHandle("createUser", cleanData);
-        inputDialog.value.closeModal();
+        closeModal();
         toast("User added successfully", "success");
         isScanning.value = false;
         document.getElementById("rfidInput").value = "";
         scanTimer.value = timerValue;
       } catch (error) {
-        inputDialog.value.closeModal();
+        closeModal();
         isScanning.value = false;
         if (error.message.includes("UNIQUE constraint failed: users.rfid")) {
           toast("Card already used", "danger");

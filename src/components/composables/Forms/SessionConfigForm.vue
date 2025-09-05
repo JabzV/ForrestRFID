@@ -35,8 +35,8 @@ const sampleDialog = [
     type: "dropdown",
     label: "Enable Promos",
     options: [
-      { name: "Enabled", id: true },
-      { name: "Disabled", id: false },
+      { name: "Enabled", id: 1 },
+      { name: "Disabled", id: 2 },
     ],
     isRequired: true,
     subtext: "This is the promo enabled status",

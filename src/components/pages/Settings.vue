@@ -9,15 +9,24 @@
           :show-add-button="true"
           add-button-text="Add Profile"
           @add="addProfile"
+          max-height="max-h-96"
         >
           <!-- Table Header -->
           <CustomDataTable
             :headers="['Name', 'Rate', 'Unit', 'Date Created', 'Actions']"
-            :items="sessionProfiles"
             gap-class="gap-4"
-            @edit="editProfile"
-            @delete="deleteProfile"
-          />
+          >
+            <DataTableContentCard
+              v-for="profile in sessionProfiles"
+              :key="profile.id"
+              :profile="profile"
+              :columnNumber="5"
+              gap-class="gap-4"
+              @edit="editProfile"
+              @delete="deleteProfile"
+            />
+          </CustomDataTable>
+
           <div v-if="sessionProfiles.length === 0" class="text-center py-12">
             <i class="pi pi-clock text-4xl text-gray-300 mb-4"></i>
             <p class="text-gray-500">No session profiles created yet</p>
@@ -26,6 +35,10 @@
             </p>
           </div>
         </ConfigCard>
+
+        <CustomDialog title="Add Profile" :closable="true" ref="customDialog">
+          <h1>Sample</h1>
+        </CustomDialog>
       </div>
 
       <!-- Session Configuration -->
@@ -50,34 +63,32 @@ import ConfigCard from "../composables/Cards/ConfigCard.vue";
 import SessionConfigForm from "../composables/Forms/SessionConfigForm.vue";
 import { useTopbarButtonState } from "../../../store/vueStore/topbarButtonState";
 import CustomDataTable from "../composables/DataTables/CustomDataTable.vue";
-import { ipcHandle } from "../../../ipc/ipcHandler";
+import DataTableContentCard from "../composables/Cards/DataTableContentCard.vue";
+import CustomDialog from "../composables/Dialogs/CustomDialog.vue";
+
+//Store Imports
+import { loadSessionProfiles } from "../../../store/vueStore/Settings/sessionProfile";
+import { loadSessionConfiguration } from "../../../store/vueStore/Settings/sessionConfiguration";
+import { loadAccountRoles } from "../../../store/vueStore/Settings/accountRoles";
 
 const sessionConfig = ref([]);
 const sessionProfiles = ref([]);
 const accountRoles = ref([]);
+const customDialog = ref(null);
 
 onMounted(async () => {
   useTopbarButtonState().setButtonState();
-  loadData();
+  await loadData();
 });
 
 const loadData = async () => {
-  try {
-    const configData = await ipcHandle("getSessionConfig");
-    sessionConfig.value = configData;
-
-    const profilesData = await ipcHandle("getSessionProfiles");
-    sessionProfiles.value = profilesData;
-
-    const rolesData = await ipcHandle("getAccountRoles");
-    accountRoles.value = rolesData;
-  } catch (error) {
-    console.error("Failed to load data:", error);
-  }
+  sessionProfiles.value = await loadSessionProfiles();
+  sessionConfig.value = await loadSessionConfiguration();
+  accountRoles.value = await loadAccountRoles();
 };
 
 const addProfile = () => {
-  console.log("Add profile clicked");
+  customDialog.value.openModal();
   // TODO: Implement add profile functionality
 };
 

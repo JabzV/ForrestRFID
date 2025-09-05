@@ -12,17 +12,23 @@
 </template>
 
 <script setup>
+import { onMounted } from "vue";
 import UserCard from "../composables/Cards/UserCard.vue";
 import { useUserHistory } from "../../functions/userHistory";
+import { useTopbarButtonState } from "../../../store/vueStore/topbarButtonState";
 
 const { users } = useUserHistory();
+
+onMounted(() => {
+  useTopbarButtonState().setButtonState("Export Data");
+});
 
 // Status styling function
 const getStatusClass = (status) => {
   const classes = {
     pending: "bg-warning-light text-warning",
     completed: "bg-success-light text-success",
-    cancelled: "bg-danger-light text-danger"
+    cancelled: "bg-danger-light text-danger",
   };
   return classes[status.toLowerCase()] || "bg-gray-100 text-gray-600";
 };

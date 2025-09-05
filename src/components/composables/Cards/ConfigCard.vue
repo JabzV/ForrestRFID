@@ -1,5 +1,8 @@
 <template>
-  <div class="border border-gray-300 rounded-3xl p-7" :class="`${customClass}`">
+  <div
+    class="border border-gray-300 rounded-3xl p-7 bg-white"
+    :class="`${customClass}`"
+  >
     <!-- Header -->
     <div class="flex items-center gap-4 mb-4">
       <div class="flex items-center gap-4">
@@ -19,7 +22,7 @@
     <hr class="border-gray-200 mb-4" />
 
     <!-- Content Slot -->
-    <div class="flex-1">
+    <div class="flex-1 overflow-y-auto" :class="maxHeight">
       <slot></slot>
     </div>
   </div>
@@ -46,6 +49,10 @@ defineProps({
   customClass: {
     type: String,
     default: "",
+  },
+  maxHeight: {
+    type: String,
+    default: "max-h-full",
   },
 });
 

@@ -9,21 +9,12 @@
   </div>
 
   <div class="space-y-3">
-    <SessionProfileCard
-      v-for="profile in items"
-      :key="profile.id"
-      :profile="profile"
-      :columnNumber="itemNumber"
-      :gapClass="gapClass"
-      @edit="handleEdit"
-      @delete="handleDelete"
-    />
+    <slot />
   </div>
 </template>
 
 <script setup>
 import { computed } from "vue";
-import SessionProfileCard from "../Cards/DataTableContentCard.vue";
 
 const props = defineProps({
   headers: {
@@ -40,9 +31,7 @@ const props = defineProps({
   },
 });
 
-const itemNumber = computed(() => {
-  return props.headers.length;
-});
+const emit = defineEmits(["edit", "delete"]);
 
 const gridColsClass = computed(() => {
   const colCount = props.headers.length;

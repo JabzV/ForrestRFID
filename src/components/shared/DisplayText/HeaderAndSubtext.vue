@@ -1,5 +1,5 @@
 <template>
-  <div class="flex flex-col gap-1 min-w-0" :class="textAlign">
+  <div class="flex flex-col gap-1 w-32" :class="`${textAlign} ${computedClass}`">
     <h3
       class="m-0 leading-tight truncate"
       :class="`${headerColor} ${textSize} ${
@@ -15,6 +15,8 @@
 </template>
 
 <script setup>
+import { computed } from "vue";
+
 const props = defineProps({
   header: String,
   headerColor: {
@@ -29,12 +31,20 @@ const props = defineProps({
   semibold: Boolean,
   textAlign: {
     type: String,
-    default: "text-left",
+    default: "text-center",
   },
   setUniformwidth: {
-    type: String,
-    default: "w-full",
+    type: Boolean,
+    default: true,
   },
+});
+
+const computedClass = computed(() => {
+  if (props.setUniformwidth) {
+    return `w-32`;
+  } else {
+    return `w-full`;
+  }
 });
 </script>
 

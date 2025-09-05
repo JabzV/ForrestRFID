@@ -1,97 +1,129 @@
 <template>
   <div
-    class="flex flex-col lg:flex-row items-start lg:items-center bg-[#fdfeff] border border-gray-300 rounded-[20px] p-6 lg:px-8 lg:py-6 gap-6 lg:gap-8 min-h-26 transition-all duration-300 w-full"
+    class="bg-[#fdfeff] border border-gray-300 rounded-[20px] p-6 lg:px-8 lg:py-6 min-h-26 transition-all duration-300 w-full"
   >
-    <!-- User icon and name section -->
-    <div class="flex items-center gap-5 w-full lg:w-auto lg:flex-shrink-0">
-      <AvatarInitials
-        :name="user.name"
-        size="w-15 h-15"
-        textSize="text-xl"
-        backgroundColor="bg-primary1/80"
-      />
+    <!-- Simple flex layout with fixed widths for perfect alignment -->
+      <!-- Left section: User info and data fields -->
+      <div class="flex items-center gap-4 justify-between">
+        <!-- User info section -->
+        <div class="flex items-center gap-4 w-72 flex-shrink-0">
+          <AvatarInitials
+            :name="user.name"
+            size="w-15 h-15"
+            textSize="text-xl"
+            backgroundColor="bg-primary1/80"
+          />
+          <HeaderAndSubtext
+            :header="user.name"
+            :subtext="`RFID: ${user.rfid}`"
+            textSize="text-2xl"
+            :setUniformwidth="false"
+            textAlign="text-left"
+          />
+        </div>
 
-      <HeaderAndSubtext
-        :header="user.name"
-        :subtext="`RFID: ${user.rfid}`"
-        textSize="text-2xl"
-      />
+        <!-- Data fields with fixed widths -->
+        <!-- Time In / Date Registered -->
+        <div class="flex items-center gap-4">
+          <div class="w-32">
+            <HeaderAndSubtext
+              :header="user.timeIn || user.dateRegistered || '-'"
+              :subtext="user.timeIn ? 'Time In' : 'Date Registered'"
+              :semibold="false"
+              textSize="text-xl"
+              textAlign="text-center"
+            />
+          </div>
+
+          <!-- Time Out / Total Sessions -->
+    
+            <HeaderAndSubtext
+              :header="user.timeOut || user.totalSessions || '-'"
+              :subtext="user.timeOut ? 'Time Out' : 'Total Sessions'"
+              :semibold="false"
+              textSize="text-xl"
+              textAlign="text-center"
+            />
+         
+
+          <!-- Duration / Total Time -->
+        
+            <HeaderAndSubtext
+              :header="user.duration || user.totalTime || '-'"
+              :subtext="user.duration ? 'Duration' : 'Total Time'"
+              :semibold="false"
+              textSize="text-xl"
+              textAlign="text-center"
+            />
+          
+
+          <!-- Total Paid -->
+      
+            <HeaderAndSubtext
+              :header="user.totalPaid || '-'"
+              subtext="Total Paid"
+              :semibold="false"
+              textSize="text-xl"
+              textAlign="text-center"
+              headerColor="text-success"
+            />
+    
+
+          <!-- Session Date - only for History page -->
+          <HeaderAndSubtext v-if="user.sessionDate"
+            :header="user.sessionDate"
+            subtext="Session Date"
+            :semibold="false"
+            textSize="text-xl"
+            textAlign="text-center"
+          />
+
+          <!-- Status - only for History page -->
+          <div v-if="user.status" class="w-32 flex justify-center">
+            <span 
+              class="px-3 py-2 w-24 rounded-lg text-sm font-medium text-center"
+              :class="statusClass"
+            >
+              {{ user.status }}
+            </span>
+          </div>
+        
+
+        <!-- Right section: Action buttons - only show for user data, not time log data -->
+        <div
+          v-if="!user.timeIn"
+          class="flex items-center gap-3 flex-shrink-0 ml-6"
+        >
+          <IconButton
+            icon="pi pi-id-card"
+            iconSize="1.2"
+            iconColor="text-success"
+            buttonColor="bg-success-light"
+            containerSize="w-11 h-11"
+            @click="$emit('view', user)"
+          />
+
+          <IconButton
+            icon="pi pi-pen-to-square"
+            iconSize="1"
+            iconColor="text-warning"
+            buttonColor="bg-warning-light"
+            containerSize="w-11 h-11"
+            @click="$emit('edit', user)"
+          />
+
+          <IconButton
+            icon="pi pi-trash"
+            iconSize="1"
+            iconColor="text-danger"
+            buttonColor="bg-danger-light"
+            containerSize="w-11 h-11"
+            @click="$emit('delete', user)"
+          />
+        </div>
     </div>
-
-    <!-- User statistics section -->
-    <div
-      class="flex flex-wrap lg:flex-row items-center gap-4 lg:gap-10 flex-1 w-full lg:w-auto justify-between lg:justify-end"
-    >
-      <HeaderAndSubtext
-        v-if="user.dateRegistered"
-        :header="user.dateRegistered"
-        subtext="Date Registered"
-        :semibold="false"
-        textSize="text-xl"
-        textAlign="text-center"
-      />
-
-      <HeaderAndSubtext
-        v-if="user.totalSessions"
-        :header="user.totalSessions"
-        subtext="Total Sessions"
-        :semibold="false"
-        textSize="text-xl"
-        textAlign="text-center"
-      />
-
-      <HeaderAndSubtext
-        v-if="user.totalTime"
-        :header="user.totalTime"
-        subtext="Total Time"
-        :semibold="false"
-        textSize="text-xl"
-        textAlign="text-center"
-      />
-
-      <HeaderAndSubtext
-        v-if="user.totalPaid"
-        :header="user.totalPaid"
-        subtext="Total Paid"
-        :semibold="false"
-        textSize="text-xl"
-        textAlign="text-center"
-        headerColor="text-success"
-        setUniformwidth="w-26"
-      />
-    </div>
-
-    <!-- Action buttons -->
-    <div
-      class="flex items-center gap-3 lg:gap-4 self-end lg:self-auto flex-shrink-0"
-    >
-      <IconButton
-        icon="pi pi-id-card"
-        iconSize="1.2"
-        iconColor="text-success"
-        buttonColor="bg-success-light"
-        containerSize="w-11 h-11"
-        @click="$emit('view', user)"
-      />
-
-      <IconButton
-        icon="pi pi-pen-to-square"
-        iconSize="1"
-        iconColor="text-warning"
-        buttonColor="bg-warning-light"
-        containerSize="w-11 h-11"
-        @click="$emit('edit', user)"
-      />
-
-      <IconButton
-        icon="pi pi-trash"
-        iconSize="1"
-        iconColor="text-danger"
-        buttonColor="bg-danger-light"
-        containerSize="w-11 h-11"
-        @click="$emit('delete', user)"
-      />
-    </div>
+  </div>
+ 
   </div>
 </template>
 
@@ -105,7 +137,12 @@ defineProps({
     type: Object,
     required: true,
   },
+  statusClass: {
+    type: String,
+    default: "bg-gray-100 text-gray-600",
+  },
 });
+
 
 defineEmits(["view", "edit", "delete"]);
 </script>

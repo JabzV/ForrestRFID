@@ -2,7 +2,7 @@ import { app, BrowserWindow } from "electron/main";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import db from "./database.js";
-import { registerUserIpc } from "./ipc/userIpc.js";
+import { registerUserIpc, registerSettingsIpc } from "./ipc/userIpc.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -27,6 +27,7 @@ function createWindow() {
 
 app.whenReady().then(() => {
   registerUserIpc();
+  registerSettingsIpc();
   createWindow();
 
   app.on("activate", () => {

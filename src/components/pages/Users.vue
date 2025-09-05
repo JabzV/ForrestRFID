@@ -78,7 +78,7 @@ const handleSubmit = async (data) => {
         inputDialog.value.closeModal();
         isScanning.value = false;
         if (error.message.includes("UNIQUE constraint failed: users.rfid")) {
-          toast("RFID already exists", "danger");
+          toast("Card already used", "danger");
         } else {
           toast(error, "danger");
         }

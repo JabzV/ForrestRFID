@@ -1,7 +1,8 @@
 <template>
   <form
     ref="formRef"
-    class="p-4 overflow-y-auto grid grid-cols-1 lg:grid-cols-2 gap-4"
+    class="overflow-y-auto grid grid-cols-1 lg:grid-cols-2"
+    :class="customClass ? customClass : 'gap-4 p-4'"
   >
     <div
       v-for="item in dialogFields"
@@ -21,6 +22,7 @@
         :customClass="item.customClass"
         :isRequired="item.isRequired"
         @update:modelValue="payload[item.field] = $event"
+        :disabled="disabled"
       />
 
       <input
@@ -35,6 +37,7 @@
         :pattern="item.pattern"
         :required="item.isRequired"
         @input="payload[item.field] = $event.target.value"
+        :disabled="disabled"
       />
 
       <input
@@ -47,10 +50,16 @@
         :pattern="item.pattern"
         :required="item.isRequired"
         @input="payload[item.field] = $event.target.value"
+        :disabled="disabled"
       />
+
+      <span v-if="item.subtext" class="text-xs text-gray-400 mt-1 ml-1">{{
+        item.subtext
+      }}</span>
     </div>
     <div class="col-span-1 lg:col-span-2 flex justify-center items-center pt-3">
       <button
+        v-if="showSubmitButton"
         type="button"
         class="bg-primary1/95 text-white px-6 py-2 w-full rounded-xl hover:bg-primary1/80 transition-all duration-200 active:scale-95 active:bg-primary1 cursor-pointer"
         @click="submitPayload"
@@ -64,12 +73,23 @@
 <script setup>
 import CustomDropdown from "./CustomDropdown.vue";
 import { useToast } from "../../../services/useToast";
-import { ref } from "vue";
+import { ref, watch, onMounted } from "vue";
 
 const props = defineProps({
   customClass: String,
-  customInputClass: String,
   dialogFields: Array,
+  showSubmitButton: {
+    type: Boolean,
+    default: true,
+  },
+  initialData: {
+    type: Object,
+    default: () => ({}),
+  },
+  disabled: {
+    type: Boolean,
+    default: false,
+  },
 });
 
 const emit = defineEmits(["submit:data"]);
@@ -77,6 +97,20 @@ const emit = defineEmits(["submit:data"]);
 const formRef = ref(null);
 const payload = ref({});
 const { toast } = useToast();
+
+// Initialize payload with initialData
+onMounted(() => {
+  payload.value = { ...props.initialData };
+});
+
+// Watch for changes in initialData and update payload
+watch(
+  () => props.initialData,
+  (newData) => {
+    payload.value = { ...newData };
+  },
+  { deep: true }
+);
 
 const submitPayload = () => {
   if (formRef.value.reportValidity()) {

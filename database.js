@@ -6,7 +6,6 @@ import Database from "better-sqlite3";
 import { createUsersTable } from "./database/migrations/users.js";
 import { createTimeLogsTable } from "./database/migrations/time_logs.js";
 import { createAccountRolesTable } from "./database/migrations/account_roles.js";
-import { createRoleBenefitsTable } from "./database/migrations/role_benefits.js";
 import { createSessionProfilesTable } from "./database/migrations/session_profiles.js";
 import { createSessionConfigTable } from "./database/migrations/session_config.js";
 import { createPromosTable } from "./database/migrations/promos.js";
@@ -26,7 +25,6 @@ createPromosTable(db);
 createUsersTable(db);
 createPivotPromosToUserTable(db);
 createTimeLogsTable(db);
-createRoleBenefitsTable(db);
 
 
 export default db;

@@ -10,4 +10,15 @@ export function createSessionProfilesTable(db) {
         deleted_at DATETIME
       )
     `).run();
+
+    // Only insert seed data if table is empty
+    const count = db.prepare('SELECT COUNT(*) as count FROM session_profiles').get();
+    if (count.count === 0) {
+        db.prepare(`
+          INSERT INTO session_profiles (name, rate_amount, rate_unit) 
+          VALUES ('Standard Room', 50, 'hr'),
+          ('Conference Room', 80, 'hr'),
+          ('Conference (Team)', 650, 'day')
+        `).run();
+    }
 }

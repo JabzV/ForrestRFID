@@ -5,6 +5,15 @@ export const smartConvert = (v) => (isNaN(v) ? v : Number(v));
 //converts string numbers to integers
 
 
+
+export function formatDate(dateString) {
+  if (!dateString) return "";
+  // Handles both "YYYY-MM-DD" and "YYYY-MM-DD HH:MM:SS"
+  return dateString.split(" ")[0];
+}
+
+
+
 export async function rfidScanner(inputId, charLength = 10) {
     await nextTick();
   

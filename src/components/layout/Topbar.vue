@@ -13,9 +13,9 @@
     </div>
 
     <!-- Right Section -->
-    <div class="flex items-center gap-14">
+    <div class="flex items-center">
       <!-- Action Buttons -->
-      <div class="flex items-center gap-10">
+      <div class="flex items-center gap-10 pr-6">
         <ClickableIcon
           icon="pi pi-cog"
           iconSize="1.3"
@@ -24,16 +24,17 @@
           @click="clickCogButton"
         />
         <ClickableIcon
-          icon="pi pi-bell"
+          icon="pi pi-refresh"
           iconSize="1.2"
           containerSize="h-10 w-10"
           :hoverEffect="true"
-          @click="clickBellButton"
+          @click="clickRefreshButton"
         />
       </div>
 
       <!-- Add Session Button -->
       <button
+        v-if="topbarButtonState.buttonLabel"
         type="button"
         class="bg-primary1 text-white px-8 py-3 rounded-full font-medium hover:bg-primary1/90 transition-all duration-200 hover:scale-102 active:scale-95 active:contrast-90 cursor-pointer"
         aria-haspopup="dialog"
@@ -65,8 +66,8 @@ const clickCogButton = () => {
   router.push("/settings");
 };
 
-const clickBellButton = () => {
-  console.log("bell clicked");
+const clickRefreshButton = () => {
+  window.location.reload();
 };
 
 const clickBackArrowButton = () => {

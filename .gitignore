@@ -27,3 +27,5 @@ dist/
 release/
 win-unpacked/
 *.exe
+
+*.db

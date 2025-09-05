@@ -5,13 +5,13 @@
       :initialData="configData"
       customClass="gap-6 p-1"
       :showSubmitButton="false"
-      :disabled="true"
+      @watch:payload="handleWatchInitialData"
     />
   </div>
 </template>
 
 <script setup>
-import { computed } from "vue";
+import { computed, ref } from "vue";
 import CustomInput from "../../shared/Forms/CustomInput.vue";
 
 const props = defineProps({
@@ -20,6 +20,8 @@ const props = defineProps({
     default: () => [],
   },
 });
+
+const emit = defineEmits(["watch:payload"]);
 
 const configData = computed(() => {
   // Convert array to object if we have data
@@ -66,4 +68,8 @@ const sampleDialog = [
     subtext: "Session below this will not be billed",
   },
 ];
+
+const handleWatchInitialData = (data) => {
+  emit("watch:payload", data);
+};
 </script>

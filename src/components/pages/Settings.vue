@@ -36,8 +36,20 @@
           </div>
         </ConfigCard>
 
-        <CustomDialog title="Add Profile" :closable="true" ref="customDialog">
-          <h1>Sample</h1>
+        <CustomDialog :title="dynamicTitle" :closable="true" ref="customDialog">
+          <CustomInput
+            v-if="submitMode !== 'deleteProfile'"
+            :dialogFields="dynamicFields"
+            :initialData="payload"
+            @submit:data="handleSubmit"
+          />
+          <DeleteDialog
+            v-if="submitMode === 'deleteProfile'"
+            :title="warningTitle"
+            :message="warningMessage"
+            @cancel="customDialog.closeModal()"
+            @proceed="handleSubmit"
+          />
         </CustomDialog>
       </div>
 
@@ -47,10 +59,14 @@
           title="Session Configuration"
           icon-class="pi pi-cog"
           :show-add-button="true"
-          add-button-text="Edit"
-          @add="editConfiguration"
+          add-button-text="Save"
+          @add="saveConfiguration"
+          :disableButton="disableButton"
         >
-          <SessionConfigForm :config="sessionConfig" />
+          <SessionConfigForm
+            :config="sessionConfig"
+            @watch:payload="handleWatchPayload"
+          />
         </ConfigCard>
       </div>
     </div>
@@ -65,16 +81,38 @@ import { useTopbarButtonState } from "../../../store/vueStore/topbarButtonState"
 import CustomDataTable from "../composables/DataTables/CustomDataTable.vue";
 import DataTableContentCard from "../composables/Cards/DataTableContentCard.vue";
 import CustomDialog from "../composables/Dialogs/CustomDialog.vue";
+import CustomInput from "../shared/Forms/CustomInput.vue";
+import DeleteDialog from "../composables/Dialogs/DeleteDialog.vue";
 
 //Store Imports
-import { loadSessionProfiles } from "../../../store/vueStore/Settings/sessionProfile";
-import { loadSessionConfiguration } from "../../../store/vueStore/Settings/sessionConfiguration";
+import {
+  getAllSessionProfiles,
+  createSessionProfile,
+  updateSessionProfile,
+  deleteSessionProfile,
+  sessionProfileModalFields,
+} from "../../../store/vueStore/Settings/sessionProfile";
+import {
+  loadSessionConfiguration,
+  updateSessionConfiguration,
+} from "../../../store/vueStore/Settings/sessionConfiguration";
 import { loadAccountRoles } from "../../../store/vueStore/Settings/accountRoles";
+import { useToast } from "../../services/useToast";
 
 const sessionConfig = ref([]);
 const sessionProfiles = ref([]);
 const accountRoles = ref([]);
 const customDialog = ref(null);
+const dynamicFields = ref([]);
+const dynamicTitle = ref("");
+const submitMode = ref(null);
+const warningTitle = ref("");
+const warningMessage = ref("");
+const disableButton = ref(true);
+const originalSessionConfig = ref({});
+const sessionConfigPayload = ref({});
+const payload = ref({});
+const { toast } = useToast();
 
 onMounted(async () => {
   useTopbarButtonState().setButtonState();
@@ -82,29 +120,92 @@ onMounted(async () => {
 });
 
 const loadData = async () => {
-  sessionProfiles.value = await loadSessionProfiles();
+  sessionProfiles.value = await getAllSessionProfiles();
   sessionConfig.value = await loadSessionConfiguration();
   accountRoles.value = await loadAccountRoles();
+
+  // Store original config for comparison
+  if (sessionConfig.value.length > 0) {
+    originalSessionConfig.value = JSON.parse(
+      JSON.stringify(sessionConfig.value[0])
+    );
+    // Reset button to disabled state when fresh data is loaded
+    disableButton.value = true;
+  }
+};
+
+const handleSubmit = async (data) => {
+  try {
+    switch (submitMode.value) {
+      case "addProfile":
+        await createSessionProfile(data);
+        break;
+      case "editProfile":
+        await updateSessionProfile(data);
+        break;
+      case "deleteProfile":
+        await deleteSessionProfile(payload.value.id);
+        break;
+    }
+    toast("Session profile updated successfully", "success");
+    customDialog.value.closeModal();
+    await loadData();
+  } catch (error) {
+    toast("An error occurred while updating the session profile", "danger");
+    console.error(error);
+  }
 };
 
 const addProfile = () => {
-  customDialog.value.openModal();
-  // TODO: Implement add profile functionality
+  openModal("Add Profile", sessionProfileModalFields, {}, "addProfile");
 };
 
 const editProfile = (profile) => {
-  console.log("Edit profile:", profile);
-  // TODO: Implement edit profile functionality
+  openModal("Edit Profile", sessionProfileModalFields, profile, "editProfile");
 };
 
 const deleteProfile = (profile) => {
-  console.log("Delete profile:", profile);
-  // TODO: Implement delete profile functionality
+  openDeleteModal(
+    "Delete Session Profile",
+    "Are you sure you want to delete this profile?",
+    profile
+  );
 };
 
-const editConfiguration = () => {
-  console.log("Edit configuration clicked");
-  // TODO: Implement edit configuration functionality
+const saveConfiguration = async () => {
+  try {
+    await updateSessionConfiguration(sessionConfigPayload.value);
+    toast("Session configuration saved successfully", "success");
+    await loadData();
+  } catch (error) {
+    toast("An error occurred while saving the session configuration", "danger");
+    console.error(error);
+  }
+};
+
+const openModal = (title, fields, data, mode) => {
+  dynamicTitle.value = title;
+  dynamicFields.value = fields;
+  payload.value = data;
+  submitMode.value = mode;
+  customDialog.value.openModal();
+};
+
+const openDeleteModal = (title, message, data) => {
+  dynamicTitle.value = title;
+  warningTitle.value = title;
+  warningMessage.value = message;
+  payload.value = data;
+  submitMode.value = "deleteProfile";
+  customDialog.value.openModal();
+};
+
+const handleWatchPayload = (currentData) => {
+  // Compare current form data with original session config
+  const hasChanges =
+    JSON.stringify(currentData) !== JSON.stringify(originalSessionConfig.value);
+  sessionConfigPayload.value = currentData;
+  disableButton.value = !hasChanges;
 };
 </script>
 

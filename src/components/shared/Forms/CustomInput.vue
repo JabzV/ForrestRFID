@@ -92,7 +92,7 @@ const props = defineProps({
   },
 });
 
-const emit = defineEmits(["submit:data"]);
+const emit = defineEmits(["submit:data", "watch:payload"]);
 
 const formRef = ref(null);
 const payload = ref({});
@@ -108,6 +108,16 @@ watch(
   () => props.initialData,
   (newData) => {
     payload.value = { ...newData };
+  },
+  { deep: true }
+);
+
+watch(
+  () => payload.value,
+  (newData) => {
+    if (props.initialData !== newData) {
+      emit("watch:payload", newData);
+    }
   },
   { deep: true }
 );

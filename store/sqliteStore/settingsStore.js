@@ -58,7 +58,23 @@ export function updateSessionConfig(data) {
     }
 }
 
+//Account Roles
 export function getAccountRoles() {
     const action = db.prepare('SELECT * FROM account_roles');
     return action.all();
+}
+
+export function createAccountRole(data) {
+    const action = db.prepare('INSERT INTO account_roles (name, benefits_type, value) VALUES (?, ?, ?)');
+    return action.run(data.name, data.benefits_type, data.value);
+}
+
+export function updateAccountRole(data) {
+    const action = db.prepare('UPDATE account_roles SET name = ?, benefits_type = ?, value = ? WHERE id = ?');
+    return action.run(data.name, data.benefits_type, data.value, data.id);
+}
+
+export function deleteAccountRole(id) {
+    const action = db.prepare('DELETE FROM account_roles WHERE id = ?');
+    return action.run(id);
 }

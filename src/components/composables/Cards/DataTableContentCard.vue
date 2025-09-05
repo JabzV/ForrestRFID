@@ -12,6 +12,12 @@
           class="text-gray-800 font-medium flex justify-center"
           >{{ "₱" + item }}</span
         >
+        <span
+          v-else-if="key === 'benefits_type'"
+          class="text-gray-800 font-medium flex justify-center"
+        >
+          {{ item === "fixed" ? "₱" : "%" }}
+        </span>
         <span v-else class="text-gray-800 font-medium flex justify-center">{{
           item
         }}</span>
@@ -24,7 +30,7 @@
           iconColor="text-warning"
           buttonColor="bg-warning-light"
           containerSize="w-9 h-9"
-          @click="$emit('edit', profile)"
+          @click="$emit('edit', item)"
         />
 
         <IconButton
@@ -33,7 +39,7 @@
           iconColor="text-danger"
           buttonColor="bg-danger-light"
           containerSize="w-9 h-9"
-          @click="$emit('delete', profile)"
+          @click="$emit('delete', item)"
         />
       </div>
     </div>
@@ -46,17 +52,9 @@ import IconButton from "@/components/shared/Clickables/IconButton.vue";
 import { formatDate } from "@/services/utils";
 
 const props = defineProps({
-  profile: {
+  item: {
     type: Object,
     required: true,
-    validator: (profile) => {
-      return (
-        profile.name &&
-        profile.rate_amount &&
-        profile.rate_unit &&
-        profile.created_at
-      );
-    },
   },
   columnNumber: {
     type: Number,
@@ -70,7 +68,7 @@ const props = defineProps({
 
 const profileWithoutId = computed(() => {
   const filtered = Object.fromEntries(
-    Object.entries(props.profile).filter(
+    Object.entries(props.item).filter(
       ([key]) => key !== "id" && key !== "updated_at" && key !== "deleted_at"
     )
   );

@@ -3,58 +3,59 @@
     <div class="flex gap-6">
       <!-- Session Profiles -->
       <div class="flex-1">
-        <ConfigCard
-          title="Session Profiles"
-          icon-class="pi pi-clock"
-          :show-add-button="true"
-          add-button-text="Add Profile"
-          @add="addProfile"
-          max-height="max-h-96"
-        >
-          <!-- Table Header -->
-          <CustomDataTable
-            :headers="['Name', 'Rate', 'Unit', 'Date Created', 'Actions']"
-            gap-class="gap-4"
+        <div class="flex flex-col gap-7">
+          <ConfigCard
+            title="Session Profiles"
+            icon-class="pi pi-clock"
+            :show-add-button="true"
+            add-button-text="Add Profile"
+            @add="addProfile"
+            max-height="max-h-96"
           >
-            <DataTableContentCard
-              v-for="profile in sessionProfiles"
-              :key="profile.id"
-              :profile="profile"
-              :columnNumber="5"
+            <!-- Table Header -->
+            <CustomDataTable
+              :headers="['Name', 'Rate', 'Unit', 'Date Created', 'Actions']"
               gap-class="gap-4"
-              @edit="editProfile"
-              @delete="deleteProfile"
-            />
-          </CustomDataTable>
+            >
+              <DataTableContentCard
+                v-for="profile in sessionProfiles"
+                :key="profile.id"
+                :item="profile"
+                :columnNumber="5"
+                gap-class="gap-4"
+                @edit="editProfile"
+                @delete="deleteProfile"
+              />
+            </CustomDataTable>
 
-          <div v-if="sessionProfiles.length === 0" class="text-center py-12">
-            <i class="pi pi-clock text-4xl text-gray-300 mb-4"></i>
-            <p class="text-gray-500">No session profiles created yet</p>
-            <p class="text-sm text-gray-400">
-              Click "Add Profile" to create your first session profile
-            </p>
-          </div>
-        </ConfigCard>
+            <div v-if="sessionProfiles.length === 0" class="text-center py-12">
+              <i class="pi pi-clock text-4xl text-gray-300 mb-4"></i>
+              <p class="text-gray-500">No session profiles created yet</p>
+              <p class="text-sm text-gray-400">
+                Click "Add Profile" to create your first session profile
+              </p>
+            </div>
+          </ConfigCard>
 
-        <CustomDialog :title="dynamicTitle" :closable="true" ref="customDialog">
-          <CustomInput
-            v-if="submitMode !== 'deleteProfile'"
-            :dialogFields="dynamicFields"
-            :initialData="payload"
-            @submit:data="handleSubmit"
-          />
-          <DeleteDialog
-            v-if="submitMode === 'deleteProfile'"
-            :title="warningTitle"
-            :message="warningMessage"
-            @cancel="customDialog.closeModal()"
-            @proceed="handleSubmit"
-          />
-        </CustomDialog>
+          <ConfigCard
+            title="Promo Management"
+            icon-class="pi pi-tag"
+            :show-add-button="true"
+            add-button-text="Add Promo"
+            @add="addPromo"
+            max-height="max-h-96"
+          >
+            <CustomDataTable
+              :headers="['Name', 'Date From', 'Date To', 'Discount', 'Actions']"
+              gap-class="gap-4"
+            >
+            </CustomDataTable>
+          </ConfigCard>
+        </div>
       </div>
 
       <!-- Session Configuration -->
-      <div class="w-2/5">
+      <div class="w-2/5 flex flex-col gap-7">
         <ConfigCard
           title="Session Configuration"
           icon-class="pi pi-cog"
@@ -68,8 +69,47 @@
             @watch:payload="handleWatchPayload"
           />
         </ConfigCard>
+
+        <ConfigCard
+          title="Account Roles"
+          icon-class="pi pi-user"
+          :show-add-button="true"
+          add-button-text="Add Role"
+          @add="addRole"
+        >
+          <CustomDataTable
+            :headers="['Name', 'Discount', 'Type', 'Actions']"
+            gap-class="gap-4"
+          >
+            <DataTableContentCard
+              v-for="role in accountRoles"
+              :key="role.id"
+              :item="role"
+              :columnNumber="4"
+              gap-class="gap-4"
+              @edit="editRole"
+              @delete="deleteRole"
+            />
+          </CustomDataTable>
+        </ConfigCard>
       </div>
     </div>
+
+    <CustomDialog :title="dynamicTitle" :closable="true" ref="customDialog">
+      <CustomInput
+        v-if="submitMode !== 'deleteProfile' && submitMode !== 'deleteRole'"
+        :dialogFields="dynamicFields"
+        :initialData="payload"
+        @submit:data="handleSubmit"
+      />
+      <DeleteDialog
+        v-if="submitMode === 'deleteProfile' || submitMode === 'deleteRole'"
+        :title="warningTitle"
+        :message="warningMessage"
+        @cancel="customDialog.closeModal()"
+        @proceed="handleSubmit"
+      />
+    </CustomDialog>
   </div>
 </template>
 
@@ -96,7 +136,13 @@ import {
   loadSessionConfiguration,
   updateSessionConfiguration,
 } from "../../../store/vueStore/Settings/sessionConfiguration";
-import { loadAccountRoles } from "../../../store/vueStore/Settings/accountRoles";
+import {
+  loadAccountRoles,
+  accountRolesModalFields,
+  createAccountRole,
+  updateAccountRole,
+  deleteAccountRole,
+} from "../../../store/vueStore/Settings/accountRoles";
 import { useToast } from "../../services/useToast";
 
 const sessionConfig = ref([]);
@@ -146,6 +192,15 @@ const handleSubmit = async (data) => {
       case "deleteProfile":
         await deleteSessionProfile(payload.value.id);
         break;
+      case "addRole":
+        await createAccountRole(data);
+        break;
+      case "editRole":
+        await updateAccountRole(data);
+        break;
+      case "deleteRole":
+        await deleteAccountRole(payload.value.id);
+        break;
     }
     toast("Session profile updated successfully", "success");
     customDialog.value.closeModal();
@@ -168,7 +223,26 @@ const deleteProfile = (profile) => {
   openDeleteModal(
     "Delete Session Profile",
     "Are you sure you want to delete this profile?",
-    profile
+    profile,
+    "deleteProfile"
+  );
+};
+
+const addRole = () => {
+  openModal("Add Role", accountRolesModalFields, {}, "addRole");
+};
+
+const editRole = (role) => {
+  openModal("Edit Role", accountRolesModalFields, role, "editRole");
+  console.log(payload.value);
+};
+
+const deleteRole = (role) => {
+  openDeleteModal(
+    "Delete Role",
+    "Are you sure you want to delete this role?",
+    role,
+    "deleteRole"
   );
 };
 
@@ -191,12 +265,12 @@ const openModal = (title, fields, data, mode) => {
   customDialog.value.openModal();
 };
 
-const openDeleteModal = (title, message, data) => {
+const openDeleteModal = (title, message, data, mode) => {
   dynamicTitle.value = title;
   warningTitle.value = title;
   warningMessage.value = message;
   payload.value = data;
-  submitMode.value = "deleteProfile";
+  submitMode.value = mode;
   customDialog.value.openModal();
 };
 

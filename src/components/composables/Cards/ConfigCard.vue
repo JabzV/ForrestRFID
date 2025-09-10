@@ -11,10 +11,14 @@
       </div>
       <button
         v-if="showAddButton"
-        class="ml-auto bg-primary1 text-white px-5 py-2 rounded-2xl text-sm font-medium transition-colors"
-        :class="
-          disableButton ? 'opacity-50' : 'cursor-pointer hover:bg-primary1/90'
-        "
+        class="ml-auto px-5 py-2 rounded-2xl text-sm font-medium"
+        :class="`
+          ${
+            disableButton
+              ? 'opacity-50'
+              : 'cursor-pointer hover:contrast-80 hover:scale-105 transition-all duration-300'
+          } ${bgColor} ${textColor}
+        `"
         :disabled="disableButton"
         @click="$emit('add')"
       >
@@ -61,6 +65,14 @@ defineProps({
   disableButton: {
     type: Boolean,
     default: false,
+  },
+  bgColor: {
+    type: String,
+    default: "bg-primary1",
+  },
+  textColor: {
+    type: String,
+    default: "text-white",
   },
 });
 

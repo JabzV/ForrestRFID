@@ -1,5 +1,5 @@
 <template>
-  <div class="bg-[#fdfeff] border border-gray-300 rounded-2xl p-5 h-64">
+  <div class="bg-[#fdfeff] border border-gray-300 rounded-2xl p-5 h-130">
     <div class="flex flex-col h-full">
       <!-- Header -->
       <div class="mb-4">
@@ -27,11 +27,11 @@
 defineProps({
   title: {
     type: String,
-    required: true
+    required: true,
   },
   revenue: {
     type: Object,
-    required: true
-  }
+    required: true,
+  },
 });
 </script>

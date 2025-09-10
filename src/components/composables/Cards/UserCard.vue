@@ -3,95 +3,121 @@
     class="bg-[#fdfeff] border border-gray-300 rounded-[20px] p-6 lg:px-8 lg:py-6 min-h-26 transition-all duration-300 w-full"
   >
     <!-- Simple flex layout with fixed widths for perfect alignment -->
-      <!-- Left section: User info and data fields -->
-      <div class="flex items-center gap-4 justify-between">
-        <!-- User info section -->
-        <div class="flex items-center gap-4 w-72 flex-shrink-0">
-          <AvatarInitials
-            :name="user.name"
-            size="w-15 h-15"
-            textSize="text-xl"
-            backgroundColor="bg-primary1/80"
-          />
-          <HeaderAndSubtext
-            :header="user.name"
-            :subtext="`RFID: ${user.rfid}`"
-            textSize="text-2xl"
-            :setUniformwidth="false"
-            textAlign="text-left"
-          />
+    <!-- Left section: User info and data fields -->
+    <div class="flex items-center gap-4 justify-between">
+      <!-- User info section -->
+      <div class="flex items-center gap-4 w-72 flex-shrink-0">
+        <AvatarInitials
+          v-if="user.full_name"
+          :name="user.full_name"
+          size="w-15 h-15"
+          textSize="text-xl"
+          :backgroundColor="
+            user.full_name === 'Non Member'
+              ? 'bg-warning-dark'
+              : 'bg-primary1/80'
+          "
+        />
+
+        <HeaderAndSubtext
+          v-if="user.full_name"
+          :header="user.full_name"
+          :subtext="`RFID: ${user.rfid}`"
+          textSize="text-2xl"
+          :setUniformwidth="false"
+          textAlign="text-left"
+        />
+      </div>
+
+      <!-- Data fields with fixed widths -->
+      <!-- Time In / Date Registered -->
+      <div class="flex items-center gap-4">
+        <HeaderAndSubtext
+          v-if="user.dateRegistered"
+          :header="user.dateRegistered"
+          :subtext="'Date Registered'"
+          :semibold="false"
+          textSize="text-2xl"
+          textAlign="text-center"
+        />
+
+        <HeaderAndSubtext
+          v-if="user.time_in"
+          :header="user.time_in"
+          :subtext="'Time In'"
+          :semibold="false"
+          textSize="text-2xl"
+          textAlign="text-center"
+        />
+
+        <!-- Time Out / Total Sessions -->
+
+        <HeaderAndSubtext
+          v-if="user.time_out || user.status"
+          :header="
+            user.status.toLowerCase() !== 'completed' ? '-' : user.time_out
+          "
+          :subtext="'Time Out'"
+          :semibold="false"
+          textSize="text-2xl"
+          textAlign="text-center"
+        />
+
+        <!-- Duration / Total Time -->
+
+        <HeaderAndSubtext
+          v-if="user.duration || user.status"
+          :header="
+            user.status.toLowerCase() !== 'completed'
+              ? '-'
+              : user.duration || user.totalTime || '-'
+          "
+          :subtext="user.duration ? 'Duration' : 'Total Time'"
+          :semibold="false"
+          textSize="text-2xl"
+          textAlign="text-center"
+        />
+
+        <!-- Total Paid -->
+
+        <HeaderAndSubtext
+          v-if="user.amount_paid || user.status"
+          :header="
+            user.status.toLowerCase() !== 'completed'
+              ? '-'
+              : user.amount_paid || '-'
+          "
+          subtext="Amount Paid"
+          :semibold="false"
+          textSize="text-2xl"
+          textAlign="text-center"
+          headerColor="text-success"
+        />
+
+        <!-- Session Date - only for History page -->
+        <HeaderAndSubtext
+          v-if="user.sessionDate"
+          :header="user.sessionDate"
+          subtext="Session Date"
+          :semibold="false"
+          textSize="text-2xl"
+          textAlign="text-center"
+        />
+
+        <!-- Status - only for History page -->
+        <div
+          v-if="user.status"
+          class="w-28 ml-2 flex justify-center items-center rounded-lg"
+          :class="statusClass"
+        >
+          <span class="px-3 py-2 text-lg font-medium text-center">
+            {{ user.status }}
+          </span>
         </div>
-
-        <!-- Data fields with fixed widths -->
-        <!-- Time In / Date Registered -->
-        <div class="flex items-center gap-4">
-          <div class="w-32">
-            <HeaderAndSubtext
-              :header="user.timeIn || user.dateRegistered || '-'"
-              :subtext="user.timeIn ? 'Time In' : 'Date Registered'"
-              :semibold="false"
-              textSize="text-xl"
-              textAlign="text-center"
-            />
-          </div>
-
-          <!-- Time Out / Total Sessions -->
-    
-            <HeaderAndSubtext
-              :header="user.timeOut || user.totalSessions || '-'"
-              :subtext="user.timeOut ? 'Time Out' : 'Total Sessions'"
-              :semibold="false"
-              textSize="text-xl"
-              textAlign="text-center"
-            />
-         
-
-          <!-- Duration / Total Time -->
-        
-            <HeaderAndSubtext
-              :header="user.duration || user.totalTime || '-'"
-              :subtext="user.duration ? 'Duration' : 'Total Time'"
-              :semibold="false"
-              textSize="text-xl"
-              textAlign="text-center"
-            />
-          
-
-          <!-- Total Paid -->
-      
-            <HeaderAndSubtext
-              :header="user.totalPaid || '-'"
-              subtext="Total Paid"
-              :semibold="false"
-              textSize="text-xl"
-              textAlign="text-center"
-              headerColor="text-success"
-            />
-    
-
-          <!-- Session Date - only for History page -->
-          <HeaderAndSubtext v-if="user.sessionDate"
-            :header="user.sessionDate"
-            subtext="Session Date"
-            :semibold="false"
-            textSize="text-xl"
-            textAlign="text-center"
-          />
-
-          <!-- Status - only for History page -->
-          <div v-if="user.status" class="w-32 flex justify-center">
-            <span 
-              class="px-3 py-2 w-24 rounded-lg text-sm font-medium text-center"
-              :class="statusClass"
-            >
-              {{ user.status }}
-            </span>
-          </div>
-        
 
         <!-- Right section: Action buttons - only show for user data, not time log data -->
         <div
-          v-if="!user.timeIn"
+          v-if="withActions"
           class="flex items-center gap-3 flex-shrink-0 ml-6"
         >
           <IconButton
@@ -121,9 +147,8 @@
             @click="$emit('delete', user)"
           />
         </div>
+      </div>
     </div>
-  </div>
- 
   </div>
 </template>
 
@@ -141,8 +166,11 @@ defineProps({
     type: String,
     default: "bg-gray-100 text-gray-600",
   },
+  withActions: {
+    type: Boolean,
+    default: true,
+  },
 });
-
 
 defineEmits(["view", "edit", "delete"]);
 </script>

@@ -11,16 +11,29 @@
       />
     </div>
     <CustomDialog
-      :title="isScanning ? 'Scanning RFID' : 'Create New User'"
+      :title="dynamicTitle"
       :closable="isScanning ? false : true"
       ref="inputDialog"
     >
       <CustomInput
-        v-if="!isScanning"
+        v-if="!isScanning && !isDeleting"
         :dialogFields="userListModalFields"
+        :initialData="payload"
+        :buttonText="isEditing ? 'Update' : 'Submit'"
+        :buttonColor="isEditing ? 'bg-warning' : 'bg-primary1/95'"
+        :buttonTextColor="isEditing ? 'text-white' : 'text-white'"
+        :disabled="isViewing"
+        :showSubmitButton="!isViewing"
         @submit:data="handleSubmit"
       />
-      <div v-if="isScanning">
+      <DeleteDialog
+        v-if="isDeleting"
+        title="Delete User"
+        message="Are you sure you want to delete this user?"
+        @cancel="closeModal()"
+        @proceed="handleDelete"
+      />
+      <div v-if="isScanning && !isDeleting">
         <input id="rfidInput" maxlength="10" class="opacity-0 h-1" />
         <ScanningDisplay :timeout="scanTimer" @timeout="handleScanTimeout" />
       </div>
@@ -29,18 +42,18 @@
 </template>
 
 <script setup>
-import { onMounted, ref } from "vue";
+import { onMounted, ref, computed } from "vue";
 
 import ScanningDisplay from "../composables/Display/ScanningDIsplay.vue";
 import UserCard from "../composables/Cards/UserCard.vue";
 import CustomDialog from "../composables/Dialogs/CustomDialog.vue";
 import CustomInput from "../shared/Forms/CustomInput.vue";
+import DeleteDialog from "../composables/Dialogs/DeleteDialog.vue";
 import {
   formatDate,
   formatToMMDDYY,
   formatDuration,
 } from "../../services/utils";
-import { useUserFunctions } from "../../functions/userFunctions";
 import { useTopbarButtonState } from "../../../store/vueStore/topbarButtonState";
 import { ipcHandle } from "../../../ipc/ipcHandler";
 import { rfidScanner } from "../../services/utils";
@@ -48,6 +61,8 @@ import { useToast } from "../../services/useToast";
 
 import {
   getUserList,
+  updateUser,
+  deleteUser,
   getUserListModalFields,
 } from "../../../store/vueStore/Users/userList";
 
@@ -55,14 +70,31 @@ let timerValue = 15000;
 let rfidScannerPromise = null;
 
 const isScanning = ref(false);
+const isEditing = ref(false);
+const isViewing = ref(false);
+const isDeleting = ref(false);
+
 const inputDialog = ref(null);
 const { toast } = useToast();
 const scanTimer = ref(timerValue); // 30 seconds timeout
 const users = ref([]);
 const userListModalFields = ref([]);
+const payload = ref({});
+
+const dynamicTitle = computed(() => {
+  if (isScanning.value) {
+    return "Scanning RFID";
+  } else if (isEditing.value && !isScanning.value) {
+    return "Edit User";
+  } else if (isViewing.value && !isScanning.value) {
+    return "View User";
+  } else {
+    return "Add User";
+  }
+});
 
 onMounted(async () => {
-  useTopbarButtonState().setButtonState("Add User", openModal);
+  useTopbarButtonState().setButtonState("Add User", () => openModal("addMode"));
   userListModalFields.value = await getUserListModalFields();
   loadData();
 });
@@ -78,7 +110,30 @@ const loadData = async () => {
   console.log(users.value);
 };
 
-const openModal = () => {
+const openModal = (mode) => {
+  switch (mode) {
+    case "addMode":
+      isEditing.value = false;
+      isViewing.value = false;
+      isDeleting.value = false;
+      payload.value = {};
+      break;
+    case "editMode":
+      isEditing.value = true;
+      isViewing.value = false;
+      isDeleting.value = false;
+      break;
+    case "viewMode":
+      isViewing.value = true;
+      isEditing.value = false;
+      isDeleting.value = false;
+      break;
+    case "deleteMode":
+      isDeleting.value = true;
+      isEditing.value = false;
+      isViewing.value = false;
+      break;
+  }
   if (inputDialog.value) {
     console.log("Opening modal");
     inputDialog.value.openModal();
@@ -92,6 +147,28 @@ const closeModal = () => {
 };
 
 const handleSubmit = async (data) => {
+  if (isEditing.value) {
+    await updateUserFunction(data);
+  } else {
+    await createUserFunction(data);
+  }
+};
+
+const updateUserFunction = async (data) => {
+  try {
+    await updateUser(data);
+    closeModal();
+    toast("User updated successfully", "success");
+    await loadData();
+  } catch (error) {
+    toast("An error occurred while updating the user", "danger");
+    console.error(error);
+  } finally {
+    loadData();
+  }
+};
+
+const createUserFunction = async (data) => {
   isScanning.value = true;
   rfidScannerPromise = rfidScanner("rfidInput");
 
@@ -131,6 +208,20 @@ const handleSubmit = async (data) => {
   );
 };
 
+const handleDelete = async () => {
+  try {
+    await deleteUser(payload.value.id);
+    closeModal();
+    toast("User deleted successfully", "success");
+    await loadData();
+  } catch (error) {
+    toast("An error occurred while deleting the user", "danger");
+    console.error(error);
+  } finally {
+    loadData();
+  }
+};
+
 const handleScanTimeout = () => {
   if (isScanning.value) {
     isScanning.value = false;
@@ -140,6 +231,17 @@ const handleScanTimeout = () => {
 };
 
 const handleViewButton = (user) => {
-  console.log("View user:", user);
+  payload.value = user;
+  openModal("viewMode");
+};
+
+const handleEditButton = (user) => {
+  payload.value = user;
+  openModal("editMode");
+};
+
+const handleDeleteButton = (user) => {
+  payload.value = user;
+  openModal("deleteMode");
 };
 </script>

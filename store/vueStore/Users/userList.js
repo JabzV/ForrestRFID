@@ -9,6 +9,24 @@ export async function getUserList() {
     }
 }
 
+export async function updateUser(data) {
+    try {
+        const cleanedData = JSON.parse(JSON.stringify(data));
+        return await ipcHandle("updateUser", cleanedData);
+    } catch (error) {
+        return error;
+    }
+}
+
+export async function deleteUser(id) {
+    try {
+        const cleanedData = JSON.parse(JSON.stringify(id));
+        return await ipcHandle("deleteUser", cleanedData);
+    } catch (error) {
+        return error;
+    }
+}
+
 const userListModalFields = [ 
   {
     field: "first_name",

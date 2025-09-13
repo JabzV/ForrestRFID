@@ -15,7 +15,6 @@
 <script setup>
 import { onMounted, ref } from "vue";
 import UserCard from "../composables/Cards/UserCard.vue";
-import { useUserHistory } from "../../functions/userHistory";
 import { useTopbarButtonState } from "../../../store/vueStore/topbarButtonState";
 import { getHistoryList } from "../../../store/vueStore/History/historyList";
 import {
@@ -26,7 +25,6 @@ import {
   formatToMMDDYY,
 } from "../../services/utils";
 const historyList = ref([]);
-const { users } = useUserHistory();
 
 onMounted(async () => {
   useTopbarButtonState().setButtonState("Export Data");

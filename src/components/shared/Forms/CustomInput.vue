@@ -61,10 +61,11 @@
       <button
         v-if="showSubmitButton"
         type="button"
-        class="bg-primary1/95 text-white px-6 py-2 w-full rounded-xl hover:bg-primary1/80 transition-all duration-200 active:scale-95 active:bg-primary1 cursor-pointer"
+        class="text-white px-6 py-2 w-full rounded-xl hover:opacity-85 transition-all duration-200 active:scale-95 active:contrast-110 cursor-pointer"
+        :class="`${buttonColor} ${buttonTextColor}`"
         @click="submitPayload"
       >
-        Submit
+        {{ buttonText }}
       </button>
     </div>
   </form>
@@ -89,6 +90,18 @@ const props = defineProps({
   disabled: {
     type: Boolean,
     default: false,
+  },
+  buttonText: {
+    type: String,
+    default: "Submit",
+  },
+  buttonColor: {
+    type: String,
+    default: "bg-primary1/95",
+  },
+  buttonTextColor: {
+    type: String,
+    default: "text-white",
   },
 });
 

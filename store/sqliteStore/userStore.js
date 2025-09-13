@@ -15,7 +15,7 @@ export function getUsers() {
         `);
     return action.all();
 }
-
+ 
 export function getUser(id) {
     const action = db.prepare('SELECT * FROM users WHERE id = ?');
     return action.get(id);
@@ -24,5 +24,20 @@ export function getUser(id) {
 export function createUser(data) {
     const action = db.prepare('INSERT INTO users (rfid, first_name, last_name, email, contact_number, birthday, gender, account_role_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
     return action.run(data.rfid, data.first_name, data.last_name, data.email, data.contact_number, data.birthday, data.gender, data.account_role_id).lastInsertRowid;
+}
+
+export function updateUser(data) {
+    const action = db.prepare('UPDATE users SET first_name = ?, last_name = ?, email = ?, contact_number = ?, birthday = ?, gender = ?, account_role_id = ? WHERE id = ?');
+    return action.run(data.first_name, data.last_name, data.email, data.contact_number, data.birthday, data.gender, data.account_role_id, data.id);
+}
+
+export function deleteUser(id) {
+    // First, update time_logs to set rfid to NULL for this user's rfid
+    const user = db.prepare('SELECT rfid FROM users WHERE id = ?').get(id);
+    if (user && user.rfid) {
+        db.prepare('UPDATE time_logs SET rfid = ? WHERE rfid = ?').run('Deleted User', user.rfid);
+    }
+    // Then, delete the user
+    return db.prepare('DELETE FROM users WHERE id = ?').run(id);
 }
 

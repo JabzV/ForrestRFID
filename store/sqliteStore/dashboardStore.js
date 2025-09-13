@@ -1,4 +1,5 @@
 import db from '../../database.js';
+import { now } from '../../src/services/utils.js';
 
 export function createSession(data) {
     try {
@@ -12,7 +13,7 @@ export function createSession(data) {
             ) VALUES (?, ?, ?, ?, ?)
         `);
         
-        const currentTime = new Date().toISOString();
+        const currentTime = now();
         
         const result = insertQuery.run(
             data.rfid,                    // user_id (null for non-members)
@@ -51,7 +52,7 @@ export function endSession(data) {
             throw new Error("No active session found for this RFID");
         }
         
-        const currentTime = new Date().toISOString();
+        const currentTime = now();
         const timeIn = new Date(activeSession.time_in);
         const timeOut = new Date(currentTime);
         

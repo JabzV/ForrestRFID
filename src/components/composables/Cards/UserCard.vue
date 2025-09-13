@@ -42,6 +42,34 @@
         />
 
         <HeaderAndSubtext
+          v-if="user.dateRegistered && user.account_role_id"
+          :header="user.total_sessions ? user.total_sessions : '-'"
+          :subtext="'Total Sessions'"
+          :semibold="false"
+          textSize="text-2xl"
+          textAlign="text-center"
+        />
+
+        <HeaderAndSubtext
+          v-if="user.dateRegistered && user.account_role_id"
+          :header="user.total_time ? user.total_time : '-'"
+          :subtext="'Total Time'"
+          :semibold="false"
+          textSize="text-2xl"
+          textAlign="text-center"
+        />
+
+        <HeaderAndSubtext
+          v-if="user.dateRegistered && user.account_role_id"
+          :header="`${user.total_paid ? '₱' + user.total_paid : '-'}`"
+          :subtext="'Total Paid'"
+          :semibold="false"
+          textSize="text-2xl"
+          textAlign="text-center"
+          headerColor="text-success"
+        />
+
+        <HeaderAndSubtext
           v-if="user.time_in"
           :header="user.time_in"
           :subtext="'Time In'"

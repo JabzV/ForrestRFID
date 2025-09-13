@@ -1,20 +1,32 @@
 import { nextTick } from "vue";
+import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc.js';
+import timezone from 'dayjs/plugin/timezone.js';
 
+// Extend dayjs with timezone plugins
+dayjs.extend(utc);
+dayjs.extend(timezone);
 
 export const smartConvert = (v) => (isNaN(v) ? v : Number(v));
 //converts string numbers to integers
+
+// Singapore timezone utilities using dayjs
+export const now = () => dayjs().tz('Asia/Singapore').format('YYYY-MM-DDTHH:mm:ss');
+export const nowISO = () => dayjs().tz('Asia/Singapore').toISOString();
+export const formatSingaporeDate = (date) => dayjs(date).tz('Asia/Singapore').format('YYYY-MM-DD');
+export const formatSingaporeTime = (date) => dayjs(date).tz('Asia/Singapore').format('HH:mm');
+export const formatSingaporeDateTime = (date) => dayjs(date).tz('Asia/Singapore').format('YYYY-MM-DDTHH:mm:ss');
 
 
 //format date to "YYYY-MM-DD"
 export function formatDate(dateString) {
   if (!dateString) return "";
-  // Handles both "YYYY-MM-DD" and "YYYY-MM-DD HH:MM:SS"
-  return dateString.split(" ")[0];
+  return dayjs(dateString).tz('Asia/Singapore').format('YYYY-MM-DD');
 }
 
 export function formatDateToTime(dateString) {
   if (!dateString) return "";
-  return dateString.split("T")[1].split(":").slice(0, 2).join(":"); // removes everything but time
+  return dayjs(dateString).tz('Asia/Singapore').format('HH:mm');
 }
 
 export function formatDuration(duration) {
@@ -23,7 +35,12 @@ export function formatDuration(duration) {
   if (durationList[0].length === 1) {
     durationList[0] = `0${durationList[0]}`;
   }
-  return `${durationList[0]}hr ${durationList[1]}m`;
+  let durationMinutes = Number(`.${durationList[1]}`) * 60;
+  durationMinutes = durationMinutes.toFixed(0);
+  if (durationMinutes.length === 1) {
+    durationMinutes = `0${durationMinutes}`;
+  }
+  return `${durationList[0]}hr ${durationMinutes}m`;
 }
 
 export function sentenceCase(string) {
@@ -33,12 +50,7 @@ export function sentenceCase(string) {
 
 export function formatToMMDDYY(dateString) {
   if (!dateString) return "";
-
-  const [year, month, day] = dateString.split("-");
-  // take last 2 digits of year
-  const shortYear = year.slice(-2);
-
-  return `${month}/${day}/${shortYear}`;
+  return dayjs(dateString).tz('Asia/Singapore').format('MM/DD/YY');
 }
 
 

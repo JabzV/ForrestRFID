@@ -17,7 +17,7 @@
     >
       <CustomInput
         v-if="!isScanning"
-        :dialogFields="sampleDialog"
+        :dialogFields="userListModalFields"
         @submit:data="handleSubmit"
       />
       <div v-if="isScanning">
@@ -35,15 +35,21 @@ import ScanningDisplay from "../composables/Display/ScanningDIsplay.vue";
 import UserCard from "../composables/Cards/UserCard.vue";
 import CustomDialog from "../composables/Dialogs/CustomDialog.vue";
 import CustomInput from "../shared/Forms/CustomInput.vue";
-
+import {
+  formatDate,
+  formatToMMDDYY,
+  formatDuration,
+} from "../../services/utils";
 import { useUserFunctions } from "../../functions/userFunctions";
 import { useTopbarButtonState } from "../../../store/vueStore/topbarButtonState";
 import { ipcHandle } from "../../../ipc/ipcHandler";
 import { rfidScanner } from "../../services/utils";
 import { useToast } from "../../services/useToast";
 
-const { users, handleViewButton, handleEditButton, handleDeleteButton } =
-  useUserFunctions();
+import {
+  getUserList,
+  getUserListModalFields,
+} from "../../../store/vueStore/Users/userList";
 
 let timerValue = 15000;
 let rfidScannerPromise = null;
@@ -52,10 +58,25 @@ const isScanning = ref(false);
 const inputDialog = ref(null);
 const { toast } = useToast();
 const scanTimer = ref(timerValue); // 30 seconds timeout
+const users = ref([]);
+const userListModalFields = ref([]);
 
-onMounted(() => {
+onMounted(async () => {
   useTopbarButtonState().setButtonState("Add User", openModal);
+  userListModalFields.value = await getUserListModalFields();
+  loadData();
 });
+
+const loadData = async () => {
+  users.value = await getUserList();
+  users.value.forEach((user) => {
+    user.dateRegistered = formatToMMDDYY(formatDate(user.created_at));
+    if (user.total_time) {
+      user.total_time = formatDuration(user.total_time);
+    }
+  });
+  console.log(users.value);
+};
 
 const openModal = () => {
   if (inputDialog.value) {
@@ -81,7 +102,7 @@ const handleSubmit = async (data) => {
       data.rfid = rfid;
       const cleanData = JSON.parse(JSON.stringify(data));
       try {
-        const result = await ipcHandle("createUser", cleanData);
+        await ipcHandle("createUser", cleanData);
         closeModal();
         toast("User added successfully", "success");
         isScanning.value = false;
@@ -95,6 +116,8 @@ const handleSubmit = async (data) => {
         } else {
           toast(error, "danger");
         }
+      } finally {
+        loadData();
       }
     },
     (error) => {
@@ -116,71 +139,7 @@ const handleScanTimeout = () => {
   }
 };
 
-const sampleAccountRoles = [
-  {
-    id: 1,
-    name: "Member",
-  },
-  {
-    id: 2,
-    name: "Vip",
-  },
-  {
-    id: 3,
-    name: "Guest",
-  },
-];
-
-const sampleDialog = [
-  {
-    field: "first_name",
-    placeholder: "First Name",
-    type: "text",
-    label: "First Name",
-    isRequired: true,
-  },
-  {
-    field: "last_name",
-    placeholder: "Last Name",
-    type: "text",
-    label: "Last Name",
-    isRequired: true,
-  },
-  {
-    field: "contact_number",
-    placeholder: "09xxxxxxxxx",
-    type: "tel",
-    pattern: "^(09|\\+639)\\d{9}$",
-    label: "Contact Number",
-  },
-  {
-    field: "birthday",
-    placeholder: "mm/dd/yyyy",
-    type: "date",
-    label: "Date of Birth",
-  },
-  {
-    field: "gender",
-    placeholder: "Select Gender",
-    type: "dropdown",
-    label: "Gender",
-    options: ["Male", "Female"],
-  },
-  {
-    field: "email",
-    placeholder: "example@gmail.com",
-    type: "email",
-    label: "Email",
-  },
-  {
-    field: "account_role_id",
-    placeholder: "Select Account Role",
-    type: "dropdown",
-    label: "Account Role",
-    divClass: "col-span-1 lg:col-span-2",
-    options: sampleAccountRoles,
-
-    isRequired: true,
-  },
-];
+const handleViewButton = (user) => {
+  console.log("View user:", user);
+};
 </script>

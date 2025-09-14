@@ -1,6 +1,6 @@
 import { ipcMain } from 'electron';
 import { createUser, getUsers, getUser, updateUser, deleteUser } from '../store/sqliteStore/userStore.js';
-import { getSessionConfig, getSessionProfiles, getAccountRoles, createSessionProfile, updateSessionProfile, deleteSessionProfile, getSessionProfile, updateSessionConfig, createAccountRole, updateAccountRole, deleteAccountRole } from '../store/sqliteStore/settingsStore.js';
+import { getSessionConfig, getSessionProfiles, getAccountRoles, createSessionProfile, updateSessionProfile, deleteSessionProfile, getSessionProfile, updateSessionConfig, createAccountRole, updateAccountRole, deleteAccountRole, getPromos, createPromo, updatePromo, deletePromo } from '../store/sqliteStore/settingsStore.js';
 import { createSession, endSession } from '../store/sqliteStore/dashboardStore.js';
 import { getHistory } from '../store/sqliteStore/historyStore.js';
 
@@ -78,6 +78,22 @@ export function registerSettingsIpc() {
 
     ipcMain.handle('deleteAccountRole', (event, id) => {
         return deleteAccountRole(id);
+    });
+
+    ipcMain.handle('getPromos', (event, id) => {
+        return getPromos();
+    });
+
+    ipcMain.handle('createPromo', (event, data) => {
+        return createPromo(data);
+    });
+
+    ipcMain.handle('updatePromo', (event, data) => {
+        return updatePromo(data);
+    });
+
+    ipcMain.handle('deletePromo', (event, id) => {
+        return deletePromo(id);
     });
 }
 

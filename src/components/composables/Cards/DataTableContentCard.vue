@@ -13,7 +13,7 @@
           >{{ "₱" + item }}</span
         >
         <span
-          v-else-if="key === 'benefits_type'"
+          v-else-if="key === 'benefits_type' || key === 'promo_type'"
           class="text-gray-800 font-medium flex justify-center"
         >
           {{ item === "fixed" ? "₱" : "%" }}

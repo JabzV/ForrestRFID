@@ -78,3 +78,24 @@ export function deleteAccountRole(id) {
     const action = db.prepare('DELETE FROM account_roles WHERE id = ?');
     return action.run(id);
 }
+
+//Promo Management
+export function getPromos() {
+    const action = db.prepare('SELECT * FROM promos');
+    return action.all();
+}
+
+export function createPromo(data) {
+    const action = db.prepare('INSERT INTO promos (name, date_from, date_to, promo_type, value) VALUES (?, ?, ?, ?, ?)');
+    return action.run(data.name, data.date_from, data.date_to, data.promo_type, data.value);
+}
+
+export function updatePromo(data) {
+    const action = db.prepare('UPDATE promos SET name = ?, date_from = ?, date_to = ?, promo_type = ?, value = ? WHERE id = ?');
+    return action.run(data.name, data.date_from, data.date_to, data.promo_type, data.value, data.id);
+}
+
+export function deletePromo(id) {
+    const action = db.prepare('DELETE FROM promos WHERE id = ?');
+    return action.run(id);
+}

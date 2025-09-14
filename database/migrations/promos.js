@@ -5,8 +5,8 @@ export function createPromosTable(db) {
         name TEXT NOT NULL,
         date_from DATE NOT NULL,
         date_to DATE NOT NULL,
-        promo_type TEXT NOT NULL,
-        value INTEGER NOT NULL
+        value INTEGER NOT NULL,
+        promo_type TEXT NOT NULL
       )
     `).run();
 }

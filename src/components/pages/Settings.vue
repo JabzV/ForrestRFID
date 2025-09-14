@@ -46,9 +46,25 @@
             max-height="max-h-96"
           >
             <CustomDataTable
-              :headers="['Name', 'Date From', 'Date To', 'Discount', 'Actions']"
+              :headers="[
+                'Name',
+                'Date from',
+                'Date to',
+                'Type',
+                'Discount',
+                'Actions',
+              ]"
               gap-class="gap-4"
             >
+              <DataTableContentCard
+                v-for="promo in promos"
+                :key="promo.id"
+                :item="promo"
+                :columnNumber="6"
+                gap-class="gap-4"
+                @edit="editPromo"
+                @delete="deleteSelectedPromo"
+              />
             </CustomDataTable>
           </ConfigCard>
         </div>
@@ -97,13 +113,21 @@
 
     <CustomDialog :title="dynamicTitle" :closable="true" ref="customDialog">
       <CustomInput
-        v-if="submitMode !== 'deleteProfile' && submitMode !== 'deleteRole'"
+        v-if="
+          submitMode !== 'deleteProfile' &&
+          submitMode !== 'deleteRole' &&
+          submitMode !== 'deletePromo'
+        "
         :dialogFields="dynamicFields"
         :initialData="payload"
         @submit:data="handleSubmit"
       />
       <DeleteDialog
-        v-if="submitMode === 'deleteProfile' || submitMode === 'deleteRole'"
+        v-if="
+          submitMode === 'deleteProfile' ||
+          submitMode === 'deleteRole' ||
+          submitMode === 'deletePromo'
+        "
         :title="warningTitle"
         :message="warningMessage"
         @cancel="customDialog.closeModal()"
@@ -123,6 +147,7 @@ import DataTableContentCard from "../composables/Cards/DataTableContentCard.vue"
 import CustomDialog from "../composables/Dialogs/CustomDialog.vue";
 import CustomInput from "../shared/Forms/CustomInput.vue";
 import DeleteDialog from "../composables/Dialogs/DeleteDialog.vue";
+import { useToast } from "../../services/useToast";
 
 //Store Imports
 import {
@@ -132,6 +157,7 @@ import {
   deleteSessionProfile,
   sessionProfileModalFields,
 } from "../../../store/vueStore/Settings/sessionProfile";
+
 import {
   loadSessionConfiguration,
   updateSessionConfiguration,
@@ -143,11 +169,19 @@ import {
   updateAccountRole,
   deleteAccountRole,
 } from "../../../store/vueStore/Settings/accountRoles";
-import { useToast } from "../../services/useToast";
+
+import {
+  loadPromos,
+  promoManagementModalFields,
+  createPromo,
+  updatePromo,
+  deletePromo,
+} from "../../../store/vueStore/Settings/promoManagement";
 
 const sessionConfig = ref([]);
 const sessionProfiles = ref([]);
 const accountRoles = ref([]);
+const promos = ref([]);
 const customDialog = ref(null);
 const dynamicFields = ref([]);
 const dynamicTitle = ref("");
@@ -169,6 +203,7 @@ const loadData = async () => {
   sessionProfiles.value = await getAllSessionProfiles();
   sessionConfig.value = await loadSessionConfiguration();
   accountRoles.value = await loadAccountRoles();
+  promos.value = await loadPromos();
 
   // Store original config for comparison
   if (sessionConfig.value.length > 0) {
@@ -200,6 +235,15 @@ const handleSubmit = async (data) => {
         break;
       case "deleteRole":
         await deleteAccountRole(payload.value.id);
+        break;
+      case "addPromo":
+        await createPromo(data);
+        break;
+      case "editPromo":
+        await updatePromo(data);
+        break;
+      case "deletePromo":
+        await deletePromo(payload.value.id);
         break;
     }
     toast("Session profile updated successfully", "success");
@@ -243,6 +287,23 @@ const deleteRole = (role) => {
     "Are you sure you want to delete this role?",
     role,
     "deleteRole"
+  );
+};
+
+const addPromo = () => {
+  openModal("Add Promo", promoManagementModalFields, {}, "addPromo");
+};
+
+const editPromo = (promo) => {
+  openModal("Edit Promo", promoManagementModalFields, promo, "editPromo");
+};
+
+const deleteSelectedPromo = (promo) => {
+  openDeleteModal(
+    "Delete Promo",
+    "Are you sure you want to delete this promo?",
+    promo,
+    "deletePromo"
   );
 };
 

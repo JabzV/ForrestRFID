@@ -69,3 +69,12 @@ export async function endSession(data) {
         throw error; // Re-throw so Dashboard.vue can catch it
     }
 }
+
+export async function loadActiveSessions() {
+    try {
+        return await ipcHandle("loadActiveSessions");
+    } catch (error) {
+        console.error("Error loading active sessions:", error);
+        throw error;
+    }
+}

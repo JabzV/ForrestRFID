@@ -9,6 +9,7 @@ export function createTimeLogsTable(db) {
         time_out DATETIME,
         amount_paid DECIMAL(8, 2),
         duration DECIMAL(8, 2),
+        billable_session DECIMAL(8, 2),
         status TEXT NOT NULL CHECK (status IN ('pending', 'completed', 'cancelled')),
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,

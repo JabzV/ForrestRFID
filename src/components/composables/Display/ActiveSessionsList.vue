@@ -1,8 +1,8 @@
 <template>
-  <div class="flex flex-col gap-4 w-full">
+  <div v-if="!isLoading" class="flex flex-col gap-4 w-full">
     <div
-      v-for="session in filteredSessions"
-      :key="session.id"
+      v-for="(session, index) in filteredSessions"
+      :key="index"
       class="bg-[#fdfeff] border border-gray-300 rounded-2xl p-5 transition-all duration-300 w-full h-full"
     >
       <!-- Simple flex layout with fixed widths for perfect alignment -->
@@ -12,15 +12,17 @@
         <!-- User info section -->
         <div class="flex items-center gap-4 flex-1 min-w-0">
           <AvatarInitials
-            :name="session.name"
+            :name="session.full_name"
             size="w-12 h-12"
             textSize="text-sm"
             :backgroundColor="
-              session.isMember ? 'bg-primary1/80' : 'bg-orange-500'
+              session.member_type === 'Member'
+                ? 'bg-primary1/80'
+                : 'bg-warning-dark'
             "
           />
           <HeaderAndSubtext
-            :header="session.name"
+            :header="session.full_name"
             :subtext="`RFID: ${session.rfid}`"
             textSize="text-2xl"
             :setUniformwidth="false"
@@ -33,7 +35,7 @@
           <!-- Current Bill -->
           <div class="w-24">
             <HeaderAndSubtext
-              :header="session.currentBill"
+              :header="currentBill"
               subtext="Current Bill"
               :semibold="false"
               textSize="text-2xl"
@@ -45,7 +47,7 @@
           <!-- Duration -->
           <div class="w-24">
             <HeaderAndSubtext
-              :header="session.duration"
+              :header="formatTime(session.elapsed)"
               subtext="Duration"
               :semibold="false"
               textSize="text-2xl"
@@ -78,13 +80,19 @@
       <p>No active sessions found</p>
     </div>
   </div>
+  <div v-else class="flex items-center justify-center h-full">
+    <div
+      class="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-primary1/85"
+    ></div>
+  </div>
 </template>
 
 <script setup>
-import { computed } from "vue";
+import { computed, ref, onMounted } from "vue";
 import IconButton from "@/components/shared/Clickables/IconButton.vue";
 import AvatarInitials from "@/components/shared/DisplayText/AvatarInitials.vue";
 import HeaderAndSubtext from "@/components/shared/DisplayText/HeaderAndSubtext.vue";
+import { ipcHandle } from "../../../../ipc/ipcHandler.js";
 
 const props = defineProps({
   sessions: {
@@ -96,6 +104,47 @@ const props = defineProps({
     default: "",
   },
 });
+
+const isLoading = ref(false);
+const currentBill = ref("₱0.00");
+
+onMounted(async () => {
+  await updateAllTimers();
+  setInterval(updateAllTimers, 1000);
+});
+
+const updateAllTimers = async () => {
+  props.sessions.forEach(async (session) => {
+    session.elapsed = calculateDuration(session.time_in);
+    let cleanedSession = JSON.parse(JSON.stringify(session));
+    currentBill.value = `₱${
+      (await ipcHandle("calculateBill", cleanedSession))[0].currentBill
+    }`;
+  });
+};
+
+const calculateDuration = (time_in) => {
+  const now = new Date();
+  const timeIn = new Date(time_in);
+  const elapsed = Math.round((now - timeIn) / 1000);
+
+  return elapsed;
+};
+
+function formatTime(seconds) {
+  if (seconds !== "00:00:00") {
+    const hrs = Math.floor(seconds / 3600);
+    const mins = Math.floor((seconds % 3600) / 60);
+    const secs = Math.floor(seconds % 60);
+
+    return [
+      String(hrs).padStart(2, "0"),
+      String(mins).padStart(2, "0"),
+      String(secs).padStart(2, "0"),
+    ].join(":");
+  }
+  return "00:00:00";
+}
 
 const emit = defineEmits(["delete-session"]);
 

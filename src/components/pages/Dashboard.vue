@@ -100,6 +100,7 @@ import {
   getSessionDialogFields,
   createSession,
   endSession,
+  loadActiveSessions,
 } from "../../../store/vueStore/Dashboard/sessionList";
 import CustomDialog from "../composables/Dialogs/CustomDialog.vue";
 import CustomInput from "../shared/Forms/CustomInput.vue";
@@ -109,7 +110,7 @@ import ScanningDisplay from "../composables/Display/ScanningDIsplay.vue";
 import { rfidScanner } from "../../services/utils";
 
 // Get dashboard data
-const { statistics, activeSessions, recentActivity } = useDashboardFunctions();
+const { statistics, recentActivity } = useDashboardFunctions();
 
 const customDialog = ref(null);
 const dynamicFields = ref([...sessionDialogFields]);
@@ -121,10 +122,22 @@ const payload = ref({});
 let timerValue = 15000;
 let rfidScannerPromise = null;
 const scanTimer = ref(timerValue); // 30 seconds timeout
+const activeSessions = ref([]);
 
 onMounted(async () => {
   useTopbarButtonState().setButtonState("Add Session", openModal);
+  loadDashboardData();
 });
+
+const loadDashboardData = async () => {
+  await loadActiveSessions().then((data) => {
+    data.forEach((session) => {
+      session.elapsed = "00:00:00";
+      session.currentBill = "...";
+    });
+    activeSessions.value = data;
+  });
+};
 
 const openModal = async () => {
   await loadModalData();
@@ -213,6 +226,7 @@ const handleSubmit = (data) => {
         isScanning.value = false;
         document.getElementById("rfidInput").value = "";
         scanTimer.value = timerValue;
+        loadDashboardData();
       } catch (error) {
         closeModal();
         isScanning.value = false;
@@ -254,6 +268,7 @@ const handleEndSession = async () => {
             document.getElementById("rfidInput").value = "";
             scanTimer.value = timerValue;
             closeModal();
+            loadDashboardData();
           } catch (error) {
             isScanning.value = false;
             toast(error.message || error, "danger");

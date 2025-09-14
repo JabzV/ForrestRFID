@@ -1,5 +1,8 @@
 <template>
-  <div class="flex flex-col gap-1 w-32" :class="`${textAlign} ${computedClass}`">
+  <div
+    class="flex flex-col gap-1 w-32"
+    :class="`${textAlign} ${computedClass}`"
+  >
     <h3
       class="m-0 leading-tight truncate"
       :class="`${headerColor} ${textSize} ${
@@ -18,7 +21,7 @@
 import { computed } from "vue";
 
 const props = defineProps({
-  header: String,
+  header: [String, Number],
   headerColor: {
     type: String,
     default: "text-black",

@@ -1,5 +1,39 @@
 import db from '../../database.js';
 import { now } from '../../src/services/utils.js';
+import { calculateBillSync } from './calculatBillService.js';
+
+const getQuery = `
+            SELECT 
+                time_logs.id,
+                time_logs.rfid,
+                time_logs.member_type,
+                time_logs.time_in,
+                time_logs.status,
+                time_logs.session_profile_id,
+                session_profiles.rate_amount,
+                session_profiles.rate_unit,
+                COALESCE(substr(users.first_name, 1, instr(users.first_name || ' ', ' ') - 1),'Non') || ' ' || COALESCE(users.last_name, 'Member') AS full_name,
+                users.account_role_id,
+                account_roles.benefits_type,
+                account_roles.value
+            FROM time_logs
+            LEFT JOIN users ON time_logs.rfid = users.rfid
+            LEFT JOIN session_profiles ON time_logs.session_profile_id = session_profiles.id
+            LEFT JOIN account_roles ON users.account_role_id = account_roles.id
+            WHERE time_logs.status = 'pending'
+        `;
+
+export function loadActiveSessions() {
+    try {
+        const action = db.prepare(getQuery + 'ORDER BY time_logs.time_in DESC');
+        return action.all();
+    } catch (error) {
+        console.error("Database error:", error);
+        throw new Error(`Database error: ${error.message}`);
+    }
+}
+
+
 
 export function createSession(data) {
     try {
@@ -34,17 +68,9 @@ export function createSession(data) {
 
 export function endSession(data) {
     try {
-        console.log("Ending session with RFID:", data.rfid);
         
         // First, get the active session to calculate time difference
-        const getSessionQuery = db.prepare(`
-            SELECT tl.*, sp.rate_amount, sp.rate_unit 
-            FROM time_logs tl
-            JOIN session_profiles sp ON tl.session_profile_id = sp.id
-            WHERE tl.rfid = ? AND tl.status = 'pending'
-            ORDER BY tl.time_in DESC 
-            LIMIT 1
-        `);
+        const getSessionQuery = db.prepare(getQuery + 'AND time_logs.rfid = ? ORDER BY time_logs.time_in DESC');
         
         const activeSession = getSessionQuery.get(data.rfid);
         
@@ -53,39 +79,39 @@ export function endSession(data) {
         }
         
         const currentTime = now();
-        const timeIn = new Date(activeSession.time_in);
         const timeOut = new Date(currentTime);
+        const timeIn = new Date(activeSession.time_in);
         
-        // Calculate time difference in hours
-        const timeDifferenceMs = timeOut - timeIn;
-        const timeDifferenceHours = timeDifferenceMs / (1000 * 60 * 60); // Convert to hours
+        // Calculate elapsed time in seconds using the service
+        const elapsed = Number((timeOut - timeIn) / 1000);
+        const duration = Number((elapsed / 3600).toFixed(2)); // Convert to hours
         
-        // Calculate amount based on rate and time
-        let amountPaid = 0;
-        if (activeSession.rate_unit === 'hr') {
-            // Hourly rate
-            amountPaid = timeDifferenceHours * activeSession.rate_amount;
-        } else if (activeSession.rate_unit === 'day') {
-            // Daily rate - calculate fraction of day
-            const dayFraction = timeDifferenceHours / 24;
-            amountPaid = dayFraction * activeSession.rate_amount;
-        }
-        let duration = 0;
+        // Prepare session object for bill calculation
+        const sessionForBilling = {
+            elapsed: elapsed,
+            rate_unit: activeSession.rate_unit,
+            rate_amount: activeSession.rate_amount,
+            time_in: activeSession.time_in,
+            benefits_type: activeSession.benefits_type,
+            value: activeSession.value
+        };
         
-        // Round to 2 decimal places
-        amountPaid = Math.round(amountPaid * 100) / 100;
-        duration = timeDifferenceHours.toFixed(2);
-        
-        console.log(`Session duration: ${timeDifferenceHours.toFixed(2)} hours`);
-        console.log(`Rate: ₱${activeSession.rate_amount}/${activeSession.rate_unit}`);
-        console.log(`Calculated amount: ₱${amountPaid}`);
-        
+        const billingData = calculateBillSync(sessionForBilling);
+        const amountPaid = billingData[0].currentBill;
+        const billableSession = billingData[0].billableSession;
+
         // Update the session with calculated amount
         const updateQuery = db.prepare(`
-            UPDATE time_logs SET time_out = ?, status = ?, amount_paid = ?, duration = ? WHERE id = ?
+            UPDATE time_logs SET time_out = ?, status = ?, amount_paid = ?, duration = ?, billable_session = ? WHERE id = ?
         `);
+            
+        console.log("Active Session: " + activeSession);
+        console.log("Time Out: " + timeOut);
+        console.log("Duration: " + duration);
+        console.log("Amount Paid: " + amountPaid);
+        console.log("Billable Session: " + billableSession);
         
-        const result = updateQuery.run(currentTime, 'completed', amountPaid, duration, activeSession.id);
+        const result = updateQuery.run(currentTime, 'completed', parseFloat(amountPaid), parseFloat(duration), parseFloat(billableSession), activeSession.id);
         
         if (result.changes === 0) {
             throw new Error("Failed to update session");

@@ -1,7 +1,7 @@
 import { ipcMain } from 'electron';
 import { createUser, getUsers, getUser, updateUser, deleteUser } from '../store/sqliteStore/userStore.js';
 import { getSessionConfig, getSessionProfiles, getAccountRoles, createSessionProfile, updateSessionProfile, deleteSessionProfile, getSessionProfile, updateSessionConfig, createAccountRole, updateAccountRole, deleteAccountRole, getPromos, createPromo, updatePromo, deletePromo } from '../store/sqliteStore/settingsStore.js';
-import { createSession, endSession, loadActiveSessions } from '../store/sqliteStore/dashboardStore.js';
+import { createSession, endSession, loadActiveSessions, cancelSession } from '../store/sqliteStore/dashboardStore.js';
 import { getHistory } from '../store/sqliteStore/historyStore.js';
 import { calculateBillSync } from '../store/sqliteStore/calculatBillService.js';
 export function registerUserIpc() {
@@ -109,6 +109,10 @@ export function registerDashboardIpc() {
 
     ipcMain.handle('endSession', (event, data) => {
         return endSession(data);
+    });
+
+    ipcMain.handle('cancelSession', (event, data) => {
+        return cancelSession(data);
     });
 }
 

@@ -78,3 +78,13 @@ export async function loadActiveSessions() {
         throw error;
     }
 }
+
+export async function cancelSession(data) {
+    try {
+        const cleanedData = JSON.parse(JSON.stringify(data));
+        return await ipcHandle("cancelSession", cleanedData);
+    } catch (error) {
+        console.error("Error cancelling session:", error);
+        throw error;
+    }
+}

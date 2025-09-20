@@ -130,3 +130,13 @@ export function endSession(data) {
         throw new Error(`Database error: ${error.message}`);
     }
 }
+
+export function cancelSession(data) {
+    try {
+        const action = db.prepare('UPDATE time_logs SET status = ? WHERE id = ?');
+        return action.run('cancelled', data.id);
+    } catch (error) {
+        console.error("Database error:", error);
+        throw new Error(`Database error: ${error.message}`);
+    }
+}

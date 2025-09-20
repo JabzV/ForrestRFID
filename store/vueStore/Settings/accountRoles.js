@@ -1,4 +1,4 @@
-import { ipcHandle } from "../../../ipc/ipcHandler";
+import { ipcHandle } from "../../../ipc/ipcHandler.js";
 
 export async function loadAccountRoles() {
     try {

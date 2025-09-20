@@ -1,5 +1,5 @@
-import { ipcHandle } from "../../../ipc/ipcHandler";
-import { loadAccountRoles } from "../Settings/accountRoles";
+import { ipcHandle } from "../../../ipc/ipcHandler.js";
+import { loadAccountRoles } from "../Settings/accountRoles.js";
 
 export async function getUserList() {
     try {

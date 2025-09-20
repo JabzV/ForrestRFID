@@ -29,7 +29,7 @@
             <ActiveSessionsList
               :sessions="activeSessions"
               :search-term="searchTerm"
-              @delete-session="handleDeleteSession"
+              @delete-session="handleCancelSession"
             />
           </ConfigCard>
         </div>
@@ -66,17 +66,17 @@
 
     <CustomDialog :title="dynamicTitle" :closable="true" ref="customDialog">
       <CustomInput
-        v-if="submitMode !== 'deleteSession' && !isScanning"
+        v-if="submitMode !== 'cancelSession' && !isScanning"
         :dialogFields="dynamicFields"
         :initialData="payload"
         @submit:data="handleSubmit"
       />
       <DeleteDialog
-        v-if="submitMode === 'deleteSession' && !isScanning"
+        v-if="submitMode === 'cancelSession' && !isScanning"
         title="Cancel Session"
         message="Are you sure you want to cancel this session?"
         @cancel="customDialog.closeModal()"
-        @proceed="handleCancelSession"
+        @proceed="proceedCancelSession"
       />
       <div v-if="isScanning">
         <input id="rfidInput" maxlength="10" class="opacity-0 h-1" />
@@ -101,6 +101,7 @@ import {
   createSession,
   endSession,
   loadActiveSessions,
+  cancelSession,
 } from "../../../store/vueStore/Dashboard/sessionList";
 import CustomDialog from "../composables/Dialogs/CustomDialog.vue";
 import CustomInput from "../shared/Forms/CustomInput.vue";
@@ -284,13 +285,28 @@ const handleEndSession = async () => {
   }
 };
 
-const handleDeleteSession = (sessionId) => {
-  // Remove session from the list
-  const index = activeSessions.value.findIndex(
-    (session) => session.id === sessionId
-  );
-  if (index > -1) {
-    activeSessions.value.splice(index, 1);
+const handleCancelSession = (sessionId) => {
+  submitMode.value = "cancelSession";
+  payload.value = { id: sessionId };
+  customDialog.value.openModal();
+};
+
+const proceedCancelSession = async () => {
+  try {
+    const result = await cancelSession(payload.value);
+    toast("Session cancelled successfully", "success");
+
+    //variable setting
+    isScanning.value = false;
+    closeModal();
+    loadDashboardData();
+
+    //cleanup
+    submitMode.value = null;
+    payload.value = {};
+  } catch (error) {
+    toast("An error occurred while cancelling the session", "danger");
+    console.error(error);
   }
 };
 </script>

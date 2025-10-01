@@ -1,17 +1,130 @@
 <template>
-  <div class="p-8 bg-background w-full overflow-x-hidden">
-    <div class="flex gap-6">
+  <div class="p-3 md:p-4 lg:p-6 xl:p-8 bg-background w-full overflow-x-hidden">
+    <div class="flex flex-col 2xl:flex-row gap-3 md:gap-4 lg:gap-6">
       <!-- Left Column: blabla and Active Sessions -->
-      <div class="w-7/13 flex flex-col gap-6">
+      <div class="w-full 2xl:w-7/12 flex flex-col gap-3 md:gap-4 lg:gap-6">
         <!-- Session Profiles -->
-        <div>
-          <KpiCard
-            :left-kpi="totalMembersKpi"
-            :right-kpi="avgSessionKpi"
-            height="auto"
-          />
-        </div>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-3 md:gap-4 lg:gap-6">
+          <!-- Total Members Card -->
+          <div
+            class="bg-[#fdfeff] border border-gray-300 rounded-xl md:rounded-2xl p-3 md:p-4 lg:p-5 cursor-pointer hover:shadow-lg hover:scale-[1.02] transition-all duration-300"
+            @click="navigateToUsers"
+          >
+            <div class="flex flex-col h-full">
+              <h3
+                class="text-gray-600 text-sm md:text-base font-semibold mb-2 tracking-wider uppercase"
+              >
+                {{ totalMembersKpi.title }}
+              </h3>
+              <div class="flex items-center gap-2 mb-2 flex-wrap">
+                <div class="text-2xl md:text-3xl font-bold text-gray-900">
+                  {{ totalMembersKpi.value }}
+                </div>
+                <div class="flex items-center gap-1">
+                  <div
+                    class="w-5 h-5 md:w-6 md:h-6 rounded-full flex items-center justify-center"
+                    :class="
+                      totalMembersKpi.changeType === 'positive'
+                        ? 'bg-green-100'
+                        : 'bg-orange-100'
+                    "
+                  >
+                    <i
+                      class="text-xs md:text-sm"
+                      :class="
+                        totalMembersKpi.changeType === 'positive'
+                          ? 'pi pi-arrow-up text-green-600'
+                          : 'pi pi-arrow-down text-orange-600'
+                      "
+                    ></i>
+                  </div>
+                  <span
+                    class="text-xs font-bold"
+                    :class="
+                      totalMembersKpi.changeType === 'positive'
+                        ? 'text-green-600'
+                        : 'text-orange-600'
+                    "
+                    >{{ totalMembersKpi.change }}</span
+                  >
+                </div>
+              </div>
+              <p class="text-gray-500 text-xs mb-3">
+                {{ totalMembersKpi.description }}
+              </p>
 
+              <!-- Chart -->
+              <div class="flex-1 min-h-[120px] mt-2">
+                <MiniLineChart
+                  v-if="statistics.totalMembers.chartData.length > 0"
+                  :data="statistics.totalMembers.chartData"
+                  label="Members"
+                  :change-type="statistics.totalMembers.changeType"
+                />
+              </div>
+            </div>
+          </div>
+
+          <!-- Avg Session Card -->
+          <div
+            class="bg-[#fdfeff] border border-gray-300 rounded-xl md:rounded-2xl p-3 md:p-4 lg:p-5 cursor-pointer hover:shadow-lg hover:scale-[1.02] transition-all duration-300"
+            @click="navigateToUsers"
+          >
+            <div class="flex flex-col h-full">
+              <h3
+                class="text-gray-600 text-sm md:text-base font-semibold mb-2 tracking-wider uppercase"
+              >
+                {{ avgSessionKpi.title }}
+              </h3>
+              <div class="flex items-center gap-2 mb-2 flex-wrap">
+                <div class="text-2xl md:text-3xl font-bold text-gray-900">
+                  {{ avgSessionKpi.value }}
+                </div>
+                <div class="flex items-center gap-1">
+                  <div
+                    class="w-5 h-5 md:w-6 md:h-6 rounded-full flex items-center justify-center"
+                    :class="
+                      avgSessionKpi.changeType === 'positive'
+                        ? 'bg-green-100'
+                        : 'bg-orange-100'
+                    "
+                  >
+                    <i
+                      class="text-xs md:text-sm"
+                      :class="
+                        avgSessionKpi.changeType === 'positive'
+                          ? 'pi pi-arrow-up text-green-600'
+                          : 'pi pi-arrow-down text-orange-600'
+                      "
+                    ></i>
+                  </div>
+                  <span
+                    class="text-xs font-bold"
+                    :class="
+                      avgSessionKpi.changeType === 'positive'
+                        ? 'text-green-600'
+                        : 'text-orange-600'
+                    "
+                    >{{ avgSessionKpi.change }}</span
+                  >
+                </div>
+              </div>
+              <p class="text-gray-500 text-xs mb-3">
+                {{ avgSessionKpi.description }}
+              </p>
+
+              <!-- Chart -->
+              <div class="flex-1 min-h-[120px] mt-2">
+                <MiniLineChart
+                  v-if="statistics.avgSession.chartData.length > 0"
+                  :data="statistics.avgSession.chartData"
+                  label="Avg Session"
+                  :change-type="statistics.avgSession.changeType"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
         <!-- Active Sessions -->
         <div>
           <ConfigCard
@@ -20,10 +133,10 @@
             show-add-button="true"
             add-button-text="End a Session"
             @add="handleEndSession"
-            max-height="max-h-full"
+            max-height="max-h-80"
             icon-class="pi pi-users"
-            :show-input-field="true"
-            input-placeholder="Search sessions..."
+            :show-input-field="activeSessions.length > 0"
+            input-placeholder="Enter Name or RFID..."
             @input-change="handleSessionSearch"
           >
             <ActiveSessionsList
@@ -36,28 +149,119 @@
       </div>
 
       <!-- Right Column: Current Revenue and moemoe -->
-      <div class="flex-1 flex flex-col gap-6">
+      <div class="w-full 2xl:w-5/12 flex flex-col gap-3 md:gap-4 lg:gap-6">
         <!-- Current Revenue -->
         <div>
-          <CurrentRevenueCard
-            title="Current Revenue"
-            :revenue="currentRevenue"
-          />
+          <CurrentRevenueCard title="Total Revenue" :revenue="currentRevenue" />
         </div>
 
-        <!-- moemoe -->
-        <div>
-          <KpiCard
-            :left-kpi="todaySessionsKpi"
-            :right-kpi="todayRevenueKpi"
-            :show-graphs="false"
-            height="auto"
-          />
+        <!-- Today's Metrics -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-3 md:gap-4 lg:gap-6">
+          <!-- Today's Sessions Card -->
+          <div
+            class="bg-[#fdfeff] border border-gray-300 rounded-xl md:rounded-2xl p-3 md:p-4 lg:p-5 cursor-pointer hover:shadow-lg hover:scale-[1.02] transition-all duration-300"
+            @click="navigateToHistory"
+          >
+            <h3
+              class="text-gray-600 text-sm md:text-base font-semibold mb-2 tracking-wider uppercase"
+            >
+              {{ todaySessionsKpi.title }}
+            </h3>
+            <div class="flex items-center gap-2 mb-2 flex-wrap">
+              <div class="text-2xl md:text-3xl font-bold text-gray-900">
+                {{ todaySessionsKpi.value }}
+              </div>
+              <div class="flex items-center gap-1">
+                <div
+                  class="w-5 h-5 md:w-6 md:h-6 rounded-full flex items-center justify-center"
+                  :class="
+                    todaySessionsKpi.changeType === 'positive'
+                      ? 'bg-green-100'
+                      : 'bg-orange-100'
+                  "
+                >
+                  <i
+                    class="text-xs md:text-sm"
+                    :class="
+                      todaySessionsKpi.changeType === 'positive'
+                        ? 'pi pi-arrow-up text-green-600'
+                        : 'pi pi-arrow-down text-orange-600'
+                    "
+                  ></i>
+                </div>
+                <span
+                  class="text-xs font-bold"
+                  :class="
+                    todaySessionsKpi.changeType === 'positive'
+                      ? 'text-green-600'
+                      : 'text-orange-600'
+                  "
+                  >{{ todaySessionsKpi.change }}</span
+                >
+              </div>
+            </div>
+            <p class="text-gray-500 text-xs">
+              {{ todaySessionsKpi.description }}
+            </p>
+          </div>
+
+          <!-- Today's Revenue Card -->
+          <div
+            class="bg-[#fdfeff] border border-gray-300 rounded-xl md:rounded-2xl p-3 md:p-4 lg:p-5 cursor-pointer hover:shadow-lg hover:scale-[1.02] transition-all duration-300"
+            @click="navigateToHistory"
+          >
+            <h3
+              class="text-gray-600 text-sm md:text-base font-semibold mb-2 tracking-wider uppercase"
+            >
+              {{ todayRevenueKpi.title }}
+            </h3>
+            <div class="flex items-center gap-2 mb-2 flex-wrap">
+              <div class="text-2xl md:text-3xl font-bold text-gray-900">
+                {{ todayRevenueKpi.value }}
+              </div>
+              <div class="flex items-center gap-1">
+                <div
+                  class="w-5 h-5 md:w-6 md:h-6 rounded-full flex items-center justify-center"
+                  :class="
+                    todayRevenueKpi.changeType === 'positive'
+                      ? 'bg-green-100'
+                      : 'bg-orange-100'
+                  "
+                >
+                  <i
+                    class="text-xs md:text-sm"
+                    :class="
+                      todayRevenueKpi.changeType === 'positive'
+                        ? 'pi pi-arrow-up text-green-600'
+                        : 'pi pi-arrow-down text-orange-600'
+                    "
+                  ></i>
+                </div>
+                <span
+                  class="text-xs font-bold"
+                  :class="
+                    todayRevenueKpi.changeType === 'positive'
+                      ? 'text-green-600'
+                      : 'text-orange-600'
+                  "
+                  >{{ todayRevenueKpi.change }}</span
+                >
+              </div>
+            </div>
+            <p class="text-gray-500 text-xs">
+              {{ todayRevenueKpi.description }}
+            </p>
+          </div>
         </div>
 
         <!-- Recent Activity -->
         <div>
-          <ConfigCard title="Recent Activity" icon-class="pi pi-clock">
+          <ConfigCard
+            title="Recent Activity"
+            icon-class="pi pi-clock"
+            :clickable="true"
+            @card-click="navigateToHistory"
+          >
             <RecentActivityList :activities="recentActivity" />
           </ConfigCard>
         </div>
@@ -88,11 +292,12 @@
 
 <script setup>
 import { ref, computed, onMounted, nextTick } from "vue";
+import { useRouter } from "vue-router";
 import ConfigCard from "../composables/Cards/ConfigCard.vue";
-import KpiCard from "../composables/Cards/KpiCard.vue";
 import CurrentRevenueCard from "../composables/Cards/CurrentRevenueCard.vue";
 import ActiveSessionsList from "../composables/Display/ActiveSessionsList.vue";
 import RecentActivityList from "../composables/Display/RecentActivityList.vue";
+import MiniLineChart from "../composables/Charts/MiniLineChart.vue";
 import { useDashboardFunctions } from "../../functions/dashboardFunctions.js";
 import { useTopbarButtonState } from "../../../store/vueStore/topbarButtonState";
 import {
@@ -110,8 +315,15 @@ import { useToast } from "../../services/useToast";
 import ScanningDisplay from "../composables/Display/ScanningDIsplay.vue";
 import { rfidScanner } from "../../services/utils";
 
+// Router
+const router = useRouter();
+
 // Get dashboard data
-const { statistics, recentActivity } = useDashboardFunctions();
+const {
+  statistics,
+  recentActivity,
+  loadDashboardData: loadStatistics,
+} = useDashboardFunctions();
 
 const customDialog = ref(null);
 const dynamicFields = ref([...sessionDialogFields]);
@@ -131,13 +343,17 @@ onMounted(async () => {
 });
 
 const loadDashboardData = async () => {
-  await loadActiveSessions().then((data) => {
-    data.forEach((session) => {
-      session.elapsed = "00:00:00";
-      session.currentBill = "...";
-    });
-    activeSessions.value = data;
-  });
+  // Load both active sessions and statistics
+  await Promise.all([
+    loadActiveSessions().then((data) => {
+      data.forEach((session) => {
+        session.elapsed = "00:00:00";
+        session.currentBill = "...";
+      });
+      activeSessions.value = data;
+    }),
+    loadStatistics(),
+  ]);
 };
 
 const openModal = async () => {
@@ -199,10 +415,7 @@ const todayRevenueKpi = computed(() => ({
   description: statistics.value.todayRevenue.description,
 }));
 
-const currentRevenue = computed(() => ({
-  value: statistics.value.currentRevenue.value,
-  description: statistics.value.currentRevenue.description,
-}));
+const currentRevenue = computed(() => statistics.value.currentRevenue);
 
 // Search functionality
 const searchTerm = ref("");
@@ -263,7 +476,9 @@ const handleSubmit = (data) => {
       } catch (error) {
         closeModal();
         isScanning.value = false;
-        toast(error, "danger");
+        document.getElementById("rfidInput").value = "";
+        scanTimer.value = timerValue;
+        toast(error.message || error, "danger");
       }
       closeModal();
     })
@@ -340,6 +555,15 @@ const proceedCancelSession = async () => {
     toast("An error occurred while cancelling the session", "danger");
     console.error(error);
   }
+};
+
+// Navigation functions
+const navigateToUsers = () => {
+  router.push("/users");
+};
+
+const navigateToHistory = () => {
+  router.push("/history");
 };
 </script>
 

@@ -1,4 +1,4 @@
-import { contextBridge, ipcRenderer } from 'electron';
+import { contextBridge, ipcRenderer, shell } from 'electron';
 
 // Expose electron API to the renderer process
 contextBridge.exposeInMainWorld('electron', {
@@ -7,6 +7,9 @@ contextBridge.exposeInMainWorld('electron', {
     send: (channel, data) => ipcRenderer.send(channel, data),
     on: (channel, callback) => ipcRenderer.on(channel, callback),
     removeListener: (channel, callback) => ipcRenderer.removeListener(channel, callback),
+  },
+  shell: {
+    openExternal: (url) => shell.openExternal(url)
   }
 });
 

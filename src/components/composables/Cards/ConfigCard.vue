@@ -1,7 +1,13 @@
 <template>
   <div
     class="border border-gray-300 rounded-3xl p-7 bg-white"
-    :class="`${customClass}`"
+    :class="[
+      customClass,
+      clickable
+        ? 'cursor-pointer hover:shadow-lg hover:scale-[1.02] transition-all duration-300'
+        : '',
+    ]"
+    @click="handleClick"
   >
     <!-- Header -->
     <div class="flex items-center gap-4 mb-4">
@@ -29,6 +35,16 @@
     <!-- Divider -->
     <hr class="border-gray-200 mb-4" />
 
+    <!-- Search Input -->
+    <div v-if="showInputField" class="mb-4">
+      <input
+        type="text"
+        :placeholder="inputPlaceholder"
+        class="min-w-[300px] px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+        @input="$emit('input-change', $event.target.value)"
+      />
+    </div>
+
     <!-- Content Slot -->
     <div class="flex-1 overflow-y-auto" :class="maxHeight">
       <slot></slot>
@@ -37,7 +53,7 @@
 </template>
 
 <script setup>
-defineProps({
+const props = defineProps({
   title: {
     type: String,
     required: true,
@@ -74,7 +90,30 @@ defineProps({
     type: String,
     default: "text-white",
   },
+  showInputField: {
+    type: Boolean,
+    default: false,
+  },
+  inputPlaceholder: {
+    type: String,
+    default: "Search...",
+  },
+  clickable: {
+    type: Boolean,
+    default: false,
+  },
 });
 
-defineEmits(["add"]);
+const emit = defineEmits(["add", "input-change", "card-click"]);
+
+const handleClick = (event) => {
+  // Only emit if clickable and not clicking on button or input
+  if (
+    props.clickable &&
+    !event.target.closest("button") &&
+    !event.target.closest("input")
+  ) {
+    emit("card-click");
+  }
+};
 </script>

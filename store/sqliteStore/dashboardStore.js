@@ -36,8 +36,31 @@ export function loadActiveSessions() {
 
 
 
+export function checkPendingSession(rfid) {
+    try {
+        const checkQuery = db.prepare(`
+            SELECT id, rfid, time_in, status
+            FROM time_logs
+            WHERE rfid = ? AND status = 'pending' AND deleted_at IS NULL
+            LIMIT 1
+        `);
+        
+        const existingSession = checkQuery.get(rfid);
+        return existingSession || null;
+    } catch (error) {
+        console.error("Database error checking pending session:", error);
+        throw new Error(`Database error: ${error.message}`);
+    }
+}
+
 export function createSession(data) {
     try {
+        // Check if card already has a pending session
+        const existingSession = checkPendingSession(data.rfid);
+        if (existingSession) {
+            throw new Error('This card is already in use for an active session.');
+        }
+        
         const insertQuery = db.prepare(`
             INSERT INTO time_logs (
                 rfid, 

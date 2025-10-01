@@ -1,5 +1,9 @@
 import { ref, onMounted } from "vue";
 
+/**
+ * Dashboard Functions Composable
+ * Fetches and manages real-time dashboard statistics from the database
+ */
 export function useDashboardFunctions() {
     // Initialize with default values to prevent undefined errors
     const statistics = ref({
@@ -7,137 +11,107 @@ export function useDashboardFunctions() {
             value: "0",
             change: "0%",
             changeType: "positive",
-            description: "Loading..."
+            description: "Loading...",
+            chartData: []
         },
         avgSession: {
             value: "0h 0m",
             change: "0%",
             changeType: "positive",
-            description: "Loading..."
+            description: "Loading...",
+            chartData: []
         },
         currentRevenue: {
-            value: "₱0.00",
-            description: "Loading..."
+            month: {
+                value: "₱0.00",
+                change: "0%",
+                changeType: "positive",
+                description: "Loading...",
+                chartData: []
+            },
+            year: {
+                value: "₱0.00",
+                change: "0%",
+                changeType: "positive",
+                description: "Loading...",
+                chartData: []
+            }
         },
         todaySessions: {
             value: "0h 0m",
             change: "0%",
             changeType: "positive",
-            description: "Loading..."
+            description: "Loading...",
+            chartData: []
         },
         todayRevenue: {
             value: "₱0.00",
             change: "0%",
             changeType: "positive",
-            description: "Loading..."
+            description: "Loading...",
+            chartData: []
         }
     });
-    const activeSessions = ref([]);
     const recentActivity = ref([]);
+    const isLoading = ref(false);
 
-    // Load dashboard data
-    const loadDashboardData = () => {
-        // Statistics data
-        statistics.value = {
-            totalMembers: {
-                value: "114",
-                change: "+22%",
-                changeType: "positive",
-                description: "Compared to last month"
-            },
-            avgSession: {
-                value: "2h 31min",
-                change: "-12%",
-                changeType: "negative",
-                description: "Compared to last month"
-            },
-            currentRevenue: {
-                value: "₱28,530.00",
-                description: "Current Revenue for the year"
-            },
-            todaySessions: {
-                value: "1hr 17m",
-                change: "+2%",
-                changeType: "positive",
-                description: "Compared to yesterday"
-            },
-            todayRevenue: {
-                value: "₱430.00",
-                change: "-17%",
-                changeType: "negative",
-                description: "Compared to yesterday"
+    // Load dashboard data from database
+    const loadDashboardData = async () => {
+        try {
+            isLoading.value = true;
+            
+            // Fetch statistics from backend via IPC
+            const stats = await window.electron.ipcRenderer.invoke('getDashboardStats');
+            
+            console.log('📊 Dashboard stats loaded:', stats);
+            
+            if (stats) {
+                statistics.value = {
+                    totalMembers: {
+                        value: stats.totalMembers.value,
+                        change: stats.totalMembers.change,
+                        changeType: stats.totalMembers.changeType,
+                        description: stats.totalMembers.description,
+                        chartData: stats.totalMembers.chartData || []
+                    },
+                    avgSession: {
+                        value: stats.avgSession.value,
+                        change: stats.avgSession.change,
+                        changeType: stats.avgSession.changeType,
+                        description: stats.avgSession.description,
+                        chartData: stats.avgSession.chartData || []
+                    },
+                    currentRevenue: stats.currentRevenue,
+                    todaySessions: {
+                        value: stats.todaySessions.value,
+                        change: stats.todaySessions.change,
+                        changeType: stats.todaySessions.changeType,
+                        description: stats.todaySessions.description,
+                        chartData: stats.todaySessions.chartData || []
+                    },
+                    todayRevenue: {
+                        value: stats.todayRevenue.value,
+                        change: stats.todayRevenue.change,
+                        changeType: stats.todayRevenue.changeType,
+                        description: stats.todayRevenue.description,
+                        chartData: stats.todayRevenue.chartData || []
+                    }
+                };
+                
+                console.log('📈 Chart data for Total Members:', statistics.value.totalMembers.chartData);
+                console.log('📉 Chart data for Avg Session:', statistics.value.avgSession.chartData);
+                
+                // Update recent activity if provided
+                if (stats.recentActivity) {
+                    recentActivity.value = stats.recentActivity;
+                }
             }
-        };
-
-        // Active sessions data
-        activeSessions.value = [
-            {
-                id: 1,
-                name: "Jabez Vestidas",
-                rfid: "31200039",
-                isMember: true,
-                currentBill: "₱92.00",
-                duration: "01:32:31",
-                status: "active"
-            },
-            {
-                id: 2,
-                name: "Javen Cutaran",
-                rfid: "31200230",
-                isMember: true,
-                currentBill: "₱66.00",
-                duration: "00:52:31",
-                status: "paused"
-            },
-            {
-                id: 3,
-                name: "Non-Member",
-                rfid: "31231245",
-                isMember: false,
-                currentBill: "₱137.00",
-                duration: "02:42:31",
-                status: "active"
-            },
-            {
-                id: 4,
-                name: "Non-Member",
-                rfid: "31123456",
-                isMember: false,
-                currentBill: "₱17.00",
-                duration: "00:12:31",
-                status: "active"
-            },
-            {
-                id: 5,
-                name: "Non-Member",
-                rfid: "35523124",
-                isMember: false,
-                currentBill: "₱76.00",
-                duration: "01:12:01",
-                status: "active"
-            },
-            {
-                id: 6,
-                name: "Diana Batigulao",
-                rfid: "33491741",
-                isMember: true,
-                currentBill: "₱112.00",
-                duration: "01:52:31",
-                status: "paused"
-            }
-        ];
-
-        // Recent activity data
-        recentActivity.value = [
-            {
-                id: 1,
-                name: "Jabez Vestidas",
-                rfid: "31200039",
-                time: "03:12 PM",
-                date: "08/08/25",
-                action: "Time In"
-            }
-        ];
+        } catch (error) {
+            console.error('❌ Error loading dashboard data:', error);
+            // Keep default values on error
+        } finally {
+            isLoading.value = false;
+        }
     };
 
     // Load data on mount
@@ -147,8 +121,8 @@ export function useDashboardFunctions() {
 
     return {
         statistics,
-        activeSessions,
         recentActivity,
-        loadDashboardData
+        loadDashboardData,
+        isLoading
     };
 }

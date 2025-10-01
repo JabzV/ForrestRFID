@@ -154,10 +154,11 @@ const filteredSessions = computed(() => {
     return props.sessions;
   }
 
+  const searchLower = props.searchTerm.toLowerCase();
   return props.sessions.filter(
     (session) =>
-      session.name.toLowerCase().includes(props.searchTerm.toLowerCase()) ||
-      session.rfid.includes(props.searchTerm)
+      session.full_name.toLowerCase().includes(searchLower) ||
+      session.rfid.toLowerCase().includes(searchLower)
   );
 });
 

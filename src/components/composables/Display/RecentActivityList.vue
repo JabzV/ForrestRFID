@@ -1,30 +1,39 @@
 <template>
   <div>
-    <div
-      v-if="latestActivity"
-      class="p-3 w-full"
-    >
+    <div v-if="latestActivity" class="p-3 w-full">
       <!-- Simple flex layout with fixed widths for perfect alignment -->
-      <div class="flex items-center gap-2 justify-between h-full w-full overflow-hidden">
+      <div
+        class="flex items-center gap-2 justify-between h-full w-full overflow-hidden"
+      >
         <!-- User info section -->
         <div class="flex items-center gap-4 flex-1 min-w-0">
           <div
-            class="w-12 h-12 rounded-full flex items-center justify-center text-white font-medium text-sm flex-shrink-0"
-            :class="latestActivity.name === 'Non-Member' ? 'bg-orange-500' : 'bg-primary1/80'"
+            class="w-15 h-15 rounded-full flex items-center justify-center text-white font-medium text-xl flex-shrink-0"
+            :class="
+              latestActivity.name === 'Non-Member'
+                ? 'bg-orange-500'
+                : 'bg-primary1/80'
+            "
           >
             {{ getInitials(latestActivity.name) }}
           </div>
           <div class="min-w-0 flex-1">
-            <h4 class="font-medium text-gray-800 text-base truncate">{{ latestActivity.name }}</h4>
-            <p class="text-sm text-gray-700 truncate">RFID: {{ latestActivity.rfid }}</p>
+            <h4 class="text-black text-2xl truncate">
+              {{ latestActivity.name }}
+            </h4>
+            <p class="text-sm text-gray-500 truncate">
+              RFID: {{ latestActivity.rfid }}
+            </p>
           </div>
         </div>
 
         <!-- Time and Action section -->
         <div class="flex items-center gap-2 flex-shrink-0">
-          <div class="w-24 text-right">
-            <p class="text-sm font-medium text-gray-800">{{ latestActivity.time }}</p>
-            <p class="text-xs text-gray-700">{{ latestActivity.action }}</p>
+          <div class="w-32 text-right">
+            <p class="text-xl text-black">
+              {{ latestActivity.time }}
+            </p>
+            <p class="text-sm text-gray-600">{{ latestActivity.action }}</p>
           </div>
         </div>
       </div>
@@ -39,13 +48,13 @@
 </template>
 
 <script setup>
-import { computed } from 'vue';
+import { computed } from "vue";
 
 const props = defineProps({
   activities: {
     type: Array,
-    default: () => []
-  }
+    default: () => [],
+  },
 });
 
 // Get the latest activity (first item in the array)
@@ -55,11 +64,11 @@ const latestActivity = computed(() => {
 
 // Get user initials for avatar
 const getInitials = (name) => {
-  if (name === 'Non-Member') {
-    return 'NM';
+  if (name === "Non-Member") {
+    return "NM";
   }
-  
-  const words = name.split(' ');
+
+  const words = name.split(" ");
   if (words.length >= 2) {
     return (words[0][0] + words[1][0]).toUpperCase();
   }

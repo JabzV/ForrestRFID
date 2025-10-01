@@ -93,6 +93,35 @@
         </div>
       </nav>
       <!-- End Body -->
+
+      <!-- Footer - Powered By Vezles -->
+      <footer
+        class="mt-auto border-t border-gray-200 bg-gradient-to-br from-gray-50 to-white"
+      >
+        <div
+          class="py-4 px-4 flex items-center justify-center gap-2 hs-overlay-minified:flex-col hs-overlay-minified:gap-1"
+        >
+          <span
+            class="text-xs text-gray-500 font-medium hs-overlay-minified:hidden"
+            >Powered By</span
+          >
+          <div
+            @click="openVezlesPage"
+            class="flex items-center gap-1 hover:opacity-80 transition-opacity duration-200 cursor-pointer"
+          >
+            <img
+              src="/assets/VezlesLogo.png"
+              alt="Vezles Logo"
+              class="h-5 w-5 object-contain"
+            />
+            <span
+              class="text-base font-bold bg-gradient-to-r from-blue-600 to-cyan-500 bg-clip-text text-transparent hs-overlay-minified:hidden"
+              >Vezles</span
+            >
+          </div>
+        </div>
+      </footer>
+      <!-- End Footer -->
     </div>
   </div>
   <!-- End Sidebar -->
@@ -104,6 +133,25 @@ import SidebarContent from "../composables/Sidebar/SidebarContent.vue";
 import { useNavigation } from "../../services/useNavigation.js";
 
 const { navigationRoutes } = useNavigation();
+
+// Open Vezles Facebook page in external browser
+const openVezlesPage = async () => {
+  const url = "https://www.facebook.com/profile.php?id=61576651140649";
+
+  try {
+    // Try using electron IPC to open external URL
+    if (window.electron && window.electron.ipcRenderer) {
+      await window.electron.ipcRenderer.invoke("openExternal", url);
+    } else {
+      // Fallback for non-Electron environments
+      window.open(url, "_blank");
+    }
+  } catch (error) {
+    console.error("Error opening external link:", error);
+    // Final fallback
+    window.open(url, "_blank");
+  }
+};
 
 // onMounted(() => {
 //   setTimeout(() => {

@@ -1,7 +1,7 @@
 {
   "name": "Forrest_rfid",
   "private": true,
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "Forrest RFID System created by Vezles Technologies",
   "type": "module",
   "main": "main.js",

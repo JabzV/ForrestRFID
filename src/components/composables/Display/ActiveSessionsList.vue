@@ -35,7 +35,7 @@
           <!-- Current Bill -->
           <div class="w-24">
             <HeaderAndSubtext
-              :header="currentBill"
+              :header="session.currentBill ?? '₱0.00'"
               subtext="Current Bill"
               :semibold="false"
               textSize="text-2xl"
@@ -106,7 +106,6 @@ const props = defineProps({
 });
 
 const isLoading = ref(false);
-const currentBill = ref("₱0.00");
 
 onMounted(async () => {
   await updateAllTimers();
@@ -115,11 +114,15 @@ onMounted(async () => {
 
 const updateAllTimers = async () => {
   props.sessions.forEach(async (session) => {
+    // initialize current bill for newly added sessions
+    if (session.currentBill === undefined || session.currentBill === null) {
+      session.currentBill = "₱0.00";
+    }
     session.elapsed = calculateDuration(session.time_in);
-    let cleanedSession = JSON.parse(JSON.stringify(session));
+    const cleanedSession = JSON.parse(JSON.stringify(session));
     const billResult = (await ipcHandle("calculateBill", cleanedSession))[0]
       .currentBill;
-    currentBill.value = `₱${parseFloat(billResult).toFixed(2)}`;
+    session.currentBill = `₱${parseFloat(billResult).toFixed(2)}`;
   });
 };
 

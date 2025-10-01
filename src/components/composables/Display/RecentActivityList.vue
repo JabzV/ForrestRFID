@@ -7,16 +7,16 @@
       >
         <!-- User info section -->
         <div class="flex items-center gap-4 flex-1 min-w-0">
-          <div
-            class="w-15 h-15 rounded-full flex items-center justify-center text-white font-medium text-xl flex-shrink-0"
-            :class="
+          <AvatarInitials
+            :name="latestActivity.name"
+            size="w-15 h-15"
+            :backgroundColor="
               latestActivity.name === 'Non-Member'
                 ? 'bg-orange-500'
                 : 'bg-primary1/80'
             "
-          >
-            {{ getInitials(latestActivity.name) }}
-          </div>
+            textSize="text-xl"
+          />
           <div class="min-w-0 flex-1">
             <h4 class="text-black text-2xl truncate">
               {{ latestActivity.name }}
@@ -49,6 +49,7 @@
 
 <script setup>
 import { computed } from "vue";
+import AvatarInitials from "../../shared/DisplayText/AvatarInitials.vue";
 
 const props = defineProps({
   activities: {
@@ -61,19 +62,6 @@ const props = defineProps({
 const latestActivity = computed(() => {
   return props.activities.length > 0 ? props.activities[0] : null;
 });
-
-// Get user initials for avatar
-const getInitials = (name) => {
-  if (name === "Non-Member") {
-    return "NM";
-  }
-
-  const words = name.split(" ");
-  if (words.length >= 2) {
-    return (words[0][0] + words[1][0]).toUpperCase();
-  }
-  return name.substring(0, 2).toUpperCase();
-};
 </script>
 
 <style scoped>

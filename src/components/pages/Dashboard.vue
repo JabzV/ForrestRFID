@@ -268,7 +268,12 @@
       </div>
     </div>
 
-    <CustomDialog :title="dynamicTitle" :closable="true" ref="customDialog">
+    <CustomDialog
+      :title="dynamicTitle"
+      :closable="true"
+      ref="customDialog"
+      @closed="onDialogClosed"
+    >
       <CustomInput
         v-if="submitMode !== 'cancelSession' && !isScanning"
         :dialogFields="dynamicFields"
@@ -371,6 +376,16 @@ const closeModal = () => {
     console.log("Closing modal");
     customDialog.value.closeModal();
   }
+};
+
+const onDialogClosed = () => {
+  // Ensure scanning state resets when modal is closed by any means
+  if (isScanning.value) {
+    isScanning.value = false;
+  }
+  const input = document.getElementById("rfidInput");
+  if (input) input.value = "";
+  scanTimer.value = timerValue;
 };
 
 const loadModalData = async () => {

@@ -91,9 +91,9 @@ export function calculateDetailedBillingSync(session) {
             };
         }
 
-        // Apply time rounding
+        // Apply time rounding (fixed blocks)
         if (timeRounding > 0) {
-            const billableMinutes = Math.round((billableSeconds / 60) / timeRounding) * timeRounding;
+            const billableMinutes = Math.ceil((billableSeconds / 60) / timeRounding) * timeRounding;
             billableSeconds = billableMinutes * 60;
         }
 

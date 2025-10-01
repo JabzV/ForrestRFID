@@ -46,6 +46,7 @@ import ClickableIcon from "../../shared/Clickables/ClickableIcon.vue";
 
 const modal = ref(null);
 const modalId = ref(Math.random().toString(36).substr(2, 9));
+const emit = defineEmits(["opened", "closed"]);
 
 const props = defineProps({
   title: String,
@@ -55,6 +56,7 @@ const props = defineProps({
 const openModal = () => {
   if (window.HSOverlay && modal.value) {
     window.HSOverlay.open(modal.value);
+    emit("opened");
   } else {
     console.error("HSOverlay not available or modal not found");
   }
@@ -63,6 +65,7 @@ const openModal = () => {
 const closeModal = () => {
   if (window.HSOverlay && modal.value) {
     window.HSOverlay.close(modal.value);
+    emit("closed");
   }
 };
 

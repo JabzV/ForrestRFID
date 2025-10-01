@@ -44,29 +44,30 @@ export const calculateBillSync = (session) => {
 
   let billableSession = Math.max(session.elapsed - (grace_period * 60), 0);
 
-  if (billableSession < (minimum_billable_session * 60)) {
-    return [{currentBill: 0, billableSession: 0}];
-  }
-
   if (time_rounding > 0) {
-    const billableSessionMinutes = Math.round((billableSession / 60) / time_rounding) * time_rounding;
+    const billableSessionMinutes = Math.ceil((billableSession / 60) / time_rounding) * time_rounding;
     billableSession = billableSessionMinutes * 60;
   }
   
-  //Calculation
+  if (billableSession < (minimum_billable_session * 60)) {
+    return [{currentBill: 0, billableSession: 0}];
+  }
+  
+  //Calculation (numeric until final rounding)
   let currentBill = 0;
   if (session.rate_unit === 'hr') {
-    currentBill = ((billableSession / 3600) * session.rate_amount).toFixed(2);
+    currentBill = (billableSession / 3600) * (session.rate_amount || 0);
   } else if (session.rate_unit === 'day') {
-    currentBill = (Math.ceil(billableSession / 86400) * session.rate_amount).toFixed(2);
+    currentBill = Math.ceil(billableSession / 86400) * (session.rate_amount || 0);
   }
 
   //Apply Discount
-  let discount = 0;
+  let totalDiscountPercentage = 0;
+  let fixedDiscountAmount = 0;
   if (session.benefits_type === 'percentage') {
-    discount = session.value;
+    totalDiscountPercentage = Number(session.value) || 0;
   } else if (session.benefits_type === 'fixed') {
-    currentBill = currentBill - session.value;
+    fixedDiscountAmount = Number(session.value) || 0;
   }
 
   //Apply Promos (add discount to calc total discount)
@@ -74,13 +75,14 @@ export const calculateBillSync = (session) => {
     const promos = getPromos();
     const applicable_promos = filterApplicablePromos(session.time_in, promos);
     if (applicable_promos.length > 0) {
-      discount = applicable_promos.reduce((acc, promo) => acc + promo.value, discount);
+      totalDiscountPercentage = applicable_promos.reduce((acc, promo) => acc + (Number(promo.value) || 0), totalDiscountPercentage);
     }
   }
 
-  if (discount > 0) {
-    currentBill = currentBill - (currentBill * (discount / 100)).toFixed(2);
-  }
+  // Clamp after fixed discount and cap total percent at 100
+  const amountAfterFixed = Math.max(0, currentBill - fixedDiscountAmount);
+  const cappedPercent = Math.min(100, Math.max(0, totalDiscountPercentage));
+  const amountAfterPercent = amountAfterFixed * (1 - (cappedPercent / 100));
 
-  return [{currentBill: currentBill, billableSession: (billableSession/3600).toFixed(2)}];
+  return [{currentBill: Number(amountAfterPercent.toFixed(2)), billableSession: (billableSession/3600).toFixed(2)}];
 };

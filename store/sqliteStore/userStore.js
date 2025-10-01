@@ -20,6 +20,22 @@ export function getUser(id) {
     const action = db.prepare('SELECT * FROM users WHERE id = ?');
     return action.get(id);
 }
+
+export function getUserByRfid(rfid) {
+    const action = db.prepare('SELECT * FROM users WHERE rfid = ?');
+    return action.get(rfid);
+}
+
+export function checkIfMember(rfid) {
+    try {
+        const user = getUserByRfid(rfid);
+        // A user is a member if they exist in the users table and have a first_name
+        return user && user.first_name !== null && user.first_name !== undefined && user.first_name !== '';
+    } catch (error) {
+        console.error('Error checking if RFID is member:', error);
+        return false;
+    }
+}
     
 export function createUser(data) {
     const action = db.prepare('INSERT INTO users (rfid, first_name, last_name, email, contact_number, birthday, gender, account_role_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');

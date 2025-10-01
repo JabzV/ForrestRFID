@@ -219,6 +219,38 @@ const handleSubmit = (data) => {
     .then(async (rfid) => {
       if (!isScanning.value) return;
       data.rfid = rfid;
+
+      // Validate if the scanned RFID matches the selected member type
+      const isMemberCard = await window.electron.ipcRenderer.invoke(
+        "checkIfMember",
+        rfid
+      );
+      const selectedMemberType = data.member_type;
+
+      if (selectedMemberType === "Member" && !isMemberCard) {
+        isScanning.value = false;
+        document.getElementById("rfidInput").value = "";
+        scanTimer.value = timerValue;
+        closeModal();
+        toast(
+          "Error: You selected 'Member' but scanned a Non-Member card. Please scan a registered member card or select 'Non-Member'.",
+          "danger"
+        );
+        return;
+      }
+
+      if (selectedMemberType === "Non-Member" && isMemberCard) {
+        isScanning.value = false;
+        document.getElementById("rfidInput").value = "";
+        scanTimer.value = timerValue;
+        closeModal();
+        toast(
+          "Error: You selected 'Non-Member' but scanned a Member card. Please scan a non-member card or select 'Member'.",
+          "danger"
+        );
+        return;
+      }
+
       const cleanData = JSON.parse(JSON.stringify(data));
       try {
         const result = await createSession(cleanData);

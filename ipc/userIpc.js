@@ -1,5 +1,5 @@
 import { ipcMain } from 'electron';
-import { createUser, getUsers, getUser, updateUser, deleteUser } from '../store/sqliteStore/userStore.js';
+import { createUser, getUsers, getUser, updateUser, deleteUser, checkIfMember } from '../store/sqliteStore/userStore.js';
 import { getSessionConfig, getSessionProfiles, getAccountRoles, createSessionProfile, updateSessionProfile, deleteSessionProfile, getSessionProfile, updateSessionConfig, createAccountRole, updateAccountRole, deleteAccountRole, getPromos, createPromo, updatePromo, deletePromo } from '../store/sqliteStore/settingsStore.js';
 import { createSession, endSession, loadActiveSessions, cancelSession } from '../store/sqliteStore/dashboardStore.js';
 import { getHistory, getSessionDetailsById, saveBillingSnapshot, getBillingSnapshot } from '../store/sqliteStore/historyStore.js';
@@ -23,6 +23,10 @@ export function registerUserIpc() {
 
     ipcMain.handle('deleteUser', (event, id) => {
         return deleteUser(id);
+    });
+
+    ipcMain.handle('checkIfMember', (event, rfid) => {
+        return checkIfMember(rfid);
     });
 }
 

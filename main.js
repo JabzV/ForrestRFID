@@ -1,11 +1,13 @@
 import { app, BrowserWindow } from "electron/main";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import db from "./database.js";
 import { registerUserIpc, registerSettingsIpc, registerDashboardIpc, registerHistoryIpc, registerCalculateBillIpc, registerUtilityIpc } from "./ipc/userIpc.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+// Initialize database after app is ready
+let db = null;
 
 function createWindow() {
   const win = new BrowserWindow({
@@ -25,7 +27,11 @@ function createWindow() {
   }
 }
 
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
+  // Import and initialize database after app is ready
+  const dbModule = await import("./database.js");
+  db = dbModule.default;
+  
   registerUserIpc();
   registerSettingsIpc();
   registerDashboardIpc();

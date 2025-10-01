@@ -13,12 +13,16 @@ function createWindow() {
   const win = new BrowserWindow({
     width: 800,
     height: 600,
+    autoHideMenuBar: true, // Hide menu bar by default
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
       preload: path.join(__dirname, "preload.cjs"),
     },
   });
+
+  // Completely remove the menu bar
+  win.removeMenu();
 
   if (process.env.DEV) {
     win.loadURL("http://localhost:5173");

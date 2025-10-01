@@ -39,6 +39,8 @@
         :user="user"
         :statusClass="getStatusClass(user.status)"
         :withActions="false"
+        @click="handleCardClick(user)"
+        class="cursor-pointer hover:shadow-md transition-shadow duration-200"
       />
     </div>
 
@@ -51,6 +53,9 @@
       @pageChanged="handlePageChanged"
       @itemsPerPageChanged="handleItemsPerPageChanged"
     />
+
+    <!-- Session Details Modal -->
+    <SessionDetailsModal ref="sessionDetailsModal" />
   </div>
 </template>
 
@@ -59,6 +64,7 @@ import { onMounted, ref, computed } from "vue";
 import UserCard from "../composables/Cards/UserCard.vue";
 import HistorySearchAndFilters from "../composables/Forms/HistorySearchAndFilters.vue";
 import Pagination from "../shared/Navigation/Pagination.vue";
+import SessionDetailsModal from "../composables/Dialogs/SessionDetailsModal.vue";
 import { useTopbarButtonState } from "../../../store/vueStore/topbarButtonState";
 import {
   getHistoryList,
@@ -81,6 +87,7 @@ const allHistory = ref([]);
 const filteredHistory = ref([]);
 const paginatedHistory = ref([]);
 const currentPage = ref(1);
+const sessionDetailsModal = ref(null);
 const currentFilters = ref({
   searchQuery: "",
   dateFrom: "",
@@ -263,6 +270,12 @@ const handleItemsPerPageChanged = (itemsPerPage) => {
   currentFilters.value.itemsPerPage = itemsPerPage;
   currentPage.value = 1; // Reset to first page when changing items per page
   applyFiltersAndPagination();
+};
+
+const handleCardClick = (sessionRecord) => {
+  if (sessionDetailsModal.value && sessionRecord.id) {
+    sessionDetailsModal.value.openModal(sessionRecord.id);
+  }
 };
 
 // Status styling function

@@ -2,7 +2,7 @@ import { ipcMain } from 'electron';
 import { createUser, getUsers, getUser, updateUser, deleteUser } from '../store/sqliteStore/userStore.js';
 import { getSessionConfig, getSessionProfiles, getAccountRoles, createSessionProfile, updateSessionProfile, deleteSessionProfile, getSessionProfile, updateSessionConfig, createAccountRole, updateAccountRole, deleteAccountRole, getPromos, createPromo, updatePromo, deletePromo } from '../store/sqliteStore/settingsStore.js';
 import { createSession, endSession, loadActiveSessions, cancelSession } from '../store/sqliteStore/dashboardStore.js';
-import { getHistory } from '../store/sqliteStore/historyStore.js';
+import { getHistory, getSessionDetailsById } from '../store/sqliteStore/historyStore.js';
 import { calculateBillSync } from '../store/sqliteStore/calculatBillService.js';
 export function registerUserIpc() {
     ipcMain.handle('createUser', (event, data) => {
@@ -25,13 +25,6 @@ export function registerUserIpc() {
         return deleteUser(id);
     });
 }
-
-export function registerHistoryIpc() {
-    ipcMain.handle('getHistory', (event, id) => {
-        return getHistory();
-    });
-}
-
 
 export function registerSettingsIpc() {
 
@@ -119,5 +112,15 @@ export function registerDashboardIpc() {
 export function registerCalculateBillIpc() {
     ipcMain.handle('calculateBill', (event, data) => {
         return calculateBillSync(data);
+    });
+}
+
+export function registerHistoryIpc() {
+    ipcMain.handle('getHistory', (event) => {
+        return getHistory();
+    });
+
+    ipcMain.handle('getSessionDetails', (event, sessionId) => {
+        return getSessionDetailsById(sessionId);
     });
 }

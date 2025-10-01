@@ -13,7 +13,7 @@
     ></div>
 
     <div
-      :class="`hs-overlay-animation-target hs-overlay-open:scale-120 hs-overlay-open:opacity-100 scale-95 opacity-0 ease-in-out transition-all duration-100 max-w-sm lg:max-w-xl m-3 mx-auto min-h-[calc(85vh)] flex items-center relative z-10`"
+      :class="`hs-overlay-animation-target hs-overlay-open:scale-100 hs-overlay-open:opacity-100 scale-95 opacity-0 ease-in-out transition-all duration-100 max-w-sm lg:max-w-xl m-3 mx-auto min-h-[calc(85vh)] flex items-center relative z-10`"
     >
       <div
         class="w-full flex flex-col bg-white border border-gray-200 shadow-2xs rounded-xl pointer-events-auto"

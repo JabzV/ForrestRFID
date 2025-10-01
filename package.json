@@ -22,7 +22,15 @@
       "dist/**/*",
       "main.js",
       "preload.js",
-      "package.json"
+      "preload.cjs",
+      "database.js",
+      "database/**/*",
+      "store/**/*",
+      "ipc/**/*",
+      "src/services/**/*",
+      "public/**/*",
+      "package.json",
+      "node_modules/**/*"
     ],
     "win": {
       "target": "nsis",

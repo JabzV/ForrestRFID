@@ -106,8 +106,95 @@ const hasActiveFilters = computed(() => {
   );
 });
 
+const exportToCSV = async () => {
+  try {
+    // Get all history data (not just filtered/paginated)
+    const allHistoryData = await getHistoryList();
+
+    // Prepare CSV headers
+    const headers = [
+      "Full Name",
+      "RFID",
+      "Session Date",
+      "Time In",
+      "Time Out",
+      "Duration",
+      "Amount Paid",
+      "Status",
+      "Member Type",
+    ];
+
+    // Prepare CSV rows
+    const rows = allHistoryData.map((record) => {
+      // Format the data similar to how it's displayed
+      const sessionDate = formatToMMDDYY(formatDate(record.created_at));
+      const timeIn = record.time_in ? formatDateToTime(record.time_in) : "-";
+      const timeOut = record.time_out ? formatDateToTime(record.time_out) : "-";
+      const duration = record.duration ? formatDuration(record.duration) : "-";
+      const amountPaid = record.amount_paid ? `PHP ${record.amount_paid}` : "-";
+      const status = record.status ? sentenceCase(record.status) : "-";
+      const memberType =
+        record.full_name === "Non Member" ? "Non-Member" : "Member";
+
+      return [
+        record.full_name || "-",
+        record.rfid || "-",
+        sessionDate,
+        timeIn,
+        timeOut,
+        duration,
+        amountPaid,
+        status,
+        memberType,
+      ];
+    });
+
+    // Convert to CSV format
+    const csvContent = [
+      headers.join(","),
+      ...rows.map((row) =>
+        row
+          .map((field) =>
+            // Escape fields that contain commas, quotes, or newlines
+            typeof field === "string" &&
+            (field.includes(",") || field.includes('"') || field.includes("\n"))
+              ? `"${field.replace(/"/g, '""')}"`
+              : field
+          )
+          .join(",")
+      ),
+    ].join("\n");
+
+    // Create and download the file with proper UTF-8 BOM for Excel compatibility
+    const BOM = "\uFEFF"; // UTF-8 BOM (Byte Order Mark)
+    const blob = new Blob([BOM + csvContent], {
+      type: "text/csv;charset=utf-8;",
+    });
+    const link = document.createElement("a");
+
+    if (link.download !== undefined) {
+      const url = URL.createObjectURL(blob);
+      link.setAttribute("href", url);
+
+      // Generate filename with current date
+      const now = new Date();
+      const dateStr = now.toISOString().split("T")[0]; // YYYY-MM-DD format
+      link.setAttribute("download", `history_export_${dateStr}.csv`);
+
+      link.style.visibility = "hidden";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      console.log(`Exported ${allHistoryData.length} history records to CSV`);
+    }
+  } catch (error) {
+    console.error("Error exporting to CSV:", error);
+  }
+};
+
 onMounted(async () => {
-  useTopbarButtonState().setButtonState("Export Data");
+  useTopbarButtonState().setButtonState("Export Data", exportToCSV);
   await loadData();
 });
 

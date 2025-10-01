@@ -25,7 +25,8 @@ const initials = computed(() => {
   return props.name
     .split(" ")
     .map((n) => n[0])
-    .join("");
+    .join("")
+    .toUpperCase();
 });
 </script>
 

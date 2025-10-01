@@ -35,8 +35,8 @@ export function formatDuration(duration) {
   if (durationList[0].length === 1) {
     durationList[0] = `0${durationList[0]}`;
   }
-  let durationMinutes = Number(`.${durationList[1]}`) * 60;
-  durationMinutes = durationMinutes.toFixed(0);
+  let durationMinutes = Number(`.${durationList[1] || 0}`) * 60;
+  durationMinutes = Math.round(durationMinutes).toString();
   if (durationMinutes.length === 1) {
     durationMinutes = `0${durationMinutes}`;
   }

@@ -133,8 +133,8 @@
             v-if="billingBreakdown.totalDiscount > 0"
             class="flex justify-between text-green-600 font-medium"
           >
-            <span>Total Savings:</span>
-            <span>-₱{{ billingBreakdown.totalDiscount.toFixed(2) }}</span>
+            <span>Total Discount:</span>
+            <span>₱{{ billingBreakdown.totalDiscount.toFixed(2) }}</span>
           </div>
         </div>
 

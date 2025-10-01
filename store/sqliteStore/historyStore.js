@@ -32,3 +32,62 @@ export function getSessionDetailsById(sessionId) {
     `);
     return action.get(sessionId);
 }
+
+export function saveBillingSnapshot(data) {
+    try {
+        const updateQuery = db.prepare(`
+            UPDATE time_logs 
+            SET 
+                billing_snapshot = ?,
+                original_rate_amount = ?,
+                original_rate_unit = ?,
+                applied_discounts = ?,
+                final_calculated_amount = ?,
+                snapshot_created_at = ?
+            WHERE id = ?
+        `);
+        
+        const result = updateQuery.run(
+            data.billingSnapshot,
+            data.originalRateAmount,
+            data.originalRateUnit,
+            data.appliedDiscounts,
+            data.finalCalculatedAmount,
+            data.snapshotCreatedAt,
+            data.sessionId
+        );
+        
+        if (result.changes === 0) {
+            throw new Error("Failed to save billing snapshot - session not found");
+        }
+        
+        console.log(`Billing snapshot saved for session ${data.sessionId}`);
+        return result;
+        
+    } catch (error) {
+        console.error("Database error saving billing snapshot:", error);
+        throw new Error(`Database error: ${error.message}`);
+    }
+}
+
+export function getBillingSnapshot(sessionId) {
+    try {
+        const action = db.prepare(`
+            SELECT 
+                billing_snapshot,
+                original_rate_amount,
+                original_rate_unit,
+                applied_discounts,
+                final_calculated_amount,
+                snapshot_created_at
+            FROM time_logs
+            WHERE id = ?
+        `);
+        
+        return action.get(sessionId);
+        
+    } catch (error) {
+        console.error("Database error getting billing snapshot:", error);
+        throw new Error(`Database error: ${error.message}`);
+    }
+}

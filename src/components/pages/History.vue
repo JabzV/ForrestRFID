@@ -216,7 +216,9 @@ const loadData = async () => {
       time_out: user.time_out ? formatDateToTime(user.time_out) : user.time_out,
       duration: user.duration ? formatDuration(user.duration) : user.duration,
       amount_paid_original: user.amount_paid, // Keep original numeric value for sorting
-      amount_paid: user.amount_paid ? `₱${user.amount_paid}` : user.amount_paid, // Formatted for display
+      amount_paid: user.amount_paid
+        ? `₱${parseFloat(user.amount_paid).toFixed(2)}`
+        : user.amount_paid, // Formatted for display with 2 decimals
       status: user.status ? sentenceCase(user.status) : user.status,
     }));
 

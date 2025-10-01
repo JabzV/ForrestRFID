@@ -11,6 +11,7 @@ import { createSessionConfigTable } from "./database/migrations/session_config.j
 import { createPromosTable } from "./database/migrations/promos.js";
 import { createPivotPromosToUserTable } from "./database/migrations/pivot_promos_to_user.js";
 import { createAuditTrailsTable } from "./database/migrations/audit_trails.js";
+import { addBillingSnapshotColumns } from "./database/migrations/add_billing_snapshot.js";
 
 // Store DB in app’s userData directory
 const dbPath = path.join(process.cwd(), "database/app.db");
@@ -25,6 +26,9 @@ createPromosTable(db);
 createUsersTable(db);
 createPivotPromosToUserTable(db);
 createTimeLogsTable(db);
+
+// Run migration to add billing snapshot columns
+addBillingSnapshotColumns(db);
 
 
 export default db;

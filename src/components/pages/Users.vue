@@ -180,6 +180,9 @@ const loadData = async () => {
       total_time: user.total_time
         ? formatDuration(user.total_time)
         : user.total_time,
+      total_paid: user.total_paid
+        ? parseFloat(user.total_paid).toFixed(2)
+        : user.total_paid,
     }));
 
     // Keep the original users ref for backward compatibility

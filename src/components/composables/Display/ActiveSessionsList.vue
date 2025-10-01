@@ -117,9 +117,9 @@ const updateAllTimers = async () => {
   props.sessions.forEach(async (session) => {
     session.elapsed = calculateDuration(session.time_in);
     let cleanedSession = JSON.parse(JSON.stringify(session));
-    currentBill.value = `₱${
-      (await ipcHandle("calculateBill", cleanedSession))[0].currentBill
-    }`;
+    const billResult = (await ipcHandle("calculateBill", cleanedSession))[0]
+      .currentBill;
+    currentBill.value = `₱${parseFloat(billResult).toFixed(2)}`;
   });
 };
 

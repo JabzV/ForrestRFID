@@ -1,56 +1,15 @@
-import { ipcHandle } from "../../../ipc/ipcHandler.js";
-import { getBillingSnapshot, createLegacySnapshot } from "./billingSnapshotService.js";
+import db from '../../database.js';
+import { getSessionConfig, getPromos } from './settingsStore.js';
 
-export async function getSessionDetails(sessionId) {
+/**
+ * Main process billing calculation service
+ * This calculates detailed billing WITHOUT using IPC (for use during session completion)
+ */
+export function calculateDetailedBillingSync(session) {
     try {
-        // Get the complete session data with all related information
-        const sessionData = await ipcHandle("getSessionDetails", sessionId);
-        
-        if (!sessionData) {
-            throw new Error("Session not found");
-        }
-
-        // For completed sessions, try to use stored billing snapshot first
-        if (sessionData.status === 'completed') {
-            const storedSnapshot = await getBillingSnapshot(sessionId);
-            
-            if (storedSnapshot) {
-                console.log(`Using stored billing snapshot for completed session ${sessionId}`);
-                return {
-                    ...sessionData,
-                    billingBreakdown: storedSnapshot
-                };
-            } else {
-                // No snapshot exists - this is a legacy completed session
-                console.log(`No snapshot found for completed session ${sessionId}, creating legacy snapshot`);
-                const calculatedBreakdown = await calculateDetailedBilling(sessionData);
-                const legacySnapshot = await createLegacySnapshot(sessionData, calculatedBreakdown);
-                
-                return {
-                    ...sessionData,
-                    billingBreakdown: legacySnapshot
-                };
-            }
-        }
-
-        // For pending/cancelled sessions, calculate in real-time
-        const billingBreakdown = await calculateDetailedBilling(sessionData);
-        
-        return {
-            ...sessionData,
-            billingBreakdown
-        };
-    } catch (error) {
-        console.error("Error getting session details:", error);
-        throw error;
-    }
-}
-
-async function calculateDetailedBilling(session) {
-    try {
-        // Get session configuration
-        const sessionConfig = await ipcHandle("getSessionConfig");
-        const promos = await ipcHandle("getPromos");
+        // Get session configuration directly from database
+        const sessionConfig = getSessionConfig();
+        const promos = getPromos();
         
         const config = sessionConfig[0];
         const gracePeriod = config.grace_period || 0;
@@ -64,12 +23,10 @@ async function calculateDetailedBilling(session) {
         
         // Handle different session states
         if (session.status?.toLowerCase() === 'cancelled') {
-            // For cancelled sessions, use time_in as both start and end
             timeOut = timeIn;
             elapsedSeconds = 0;
             elapsedHours = 0;
         } else if (session.status?.toLowerCase() === 'pending') {
-            // For pending sessions, calculate current elapsed time
             timeOut = new Date();
             elapsedSeconds = Math.round((timeOut - timeIn) / 1000);
             elapsedHours = (elapsedSeconds / 3600).toFixed(2);
@@ -84,10 +41,9 @@ async function calculateDetailedBilling(session) {
         let billableSeconds, billableHours, isBelowMinimum;
         
         if (session.status?.toLowerCase() === 'cancelled') {
-            // Cancelled sessions have no billable time
             billableSeconds = 0;
             billableHours = 0;
-            isBelowMinimum = false; // Don't apply minimum for cancelled sessions
+            isBelowMinimum = false;
         } else {
             billableSeconds = Math.max(elapsedSeconds - (gracePeriod * 60), 0);
             billableHours = (billableSeconds / 3600).toFixed(2);
@@ -149,42 +105,71 @@ async function calculateDetailedBilling(session) {
             baseAmount = Math.ceil(billableSeconds / 86400) * (session.rate_amount || 0);
         }
 
-        // Calculate member discount
+        // Calculate discounts using the SAME logic as calculateBillSync for consistency
+        // This ensures the snapshot matches what was actually charged
+        
+        let totalDiscountPercentage = 0;
         let memberDiscount = {
             type: session.benefits_type,
             value: session.value || 0,
             amount: 0
         };
-
-        let discountedAmount = baseAmount;
-        if (session.benefits_type === 'percentage' && session.value > 0) {
-            memberDiscount.amount = (baseAmount * (session.value / 100));
-            discountedAmount = baseAmount - memberDiscount.amount;
-        } else if (session.benefits_type === 'fixed' && session.value > 0) {
+        
+        // Handle fixed discount separately
+        let fixedDiscountAmount = 0;
+        if (session.benefits_type === 'fixed' && session.value > 0) {
+            fixedDiscountAmount = session.value;
             memberDiscount.amount = session.value;
-            discountedAmount = Math.max(baseAmount - session.value, 0);
+        } else if (session.benefits_type === 'percentage' && session.value > 0) {
+            totalDiscountPercentage = session.value;
         }
 
-        // Calculate promo discounts
+        // Calculate promo discounts - ADD percentages together (matching original logic)
         let promoDiscounts = [];
-        let totalPromoDiscount = 0;
         
         if (enablePromos && promos && promos.length > 0) {
             const applicablePromos = filterApplicablePromos(session.time_in, promos);
             promoDiscounts = applicablePromos.map(promo => {
-                const promoAmount = (discountedAmount * (promo.value / 100));
-                totalPromoDiscount += promoAmount;
+                totalDiscountPercentage += promo.value;
                 return {
                     name: promo.name,
                     type: promo.promo_type,
                     value: promo.value,
+                    amount: 0 // Will be calculated below
+                };
+            });
+        }
+
+        // Apply combined percentage discount (matching calculateBillSync logic)
+        let amountAfterFixed = baseAmount - fixedDiscountAmount;
+        let percentageDiscountAmount = 0;
+        
+        if (totalDiscountPercentage > 0) {
+            percentageDiscountAmount = amountAfterFixed * (totalDiscountPercentage / 100);
+        }
+        
+        // Calculate individual discount amounts for display
+        if (session.benefits_type === 'percentage' && session.value > 0) {
+            memberDiscount.amount = baseAmount * (session.value / 100);
+        }
+        
+        // Calculate promo amounts proportionally
+        let totalPromoDiscount = 0;
+        if (promoDiscounts.length > 0 && totalDiscountPercentage > 0) {
+            const promoPercentageTotal = promoDiscounts.reduce((sum, p) => sum + p.value, 0);
+            promoDiscounts = promoDiscounts.map(promo => {
+                // Calculate proportional amount based on base amount
+                const promoAmount = baseAmount * (promo.value / 100);
+                totalPromoDiscount += promoAmount;
+                return {
+                    ...promo,
                     amount: promoAmount
                 };
             });
         }
 
-        let finalAmount = Math.max(discountedAmount - totalPromoDiscount, 0);
-        const totalDiscount = memberDiscount.amount + totalPromoDiscount;
+        let finalAmount = amountAfterFixed - percentageDiscountAmount;
+        const totalDiscount = fixedDiscountAmount + percentageDiscountAmount;
         
         // Override final amount for cancelled sessions
         if (session.status?.toLowerCase() === 'cancelled') {

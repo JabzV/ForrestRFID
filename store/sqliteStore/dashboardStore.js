@@ -1,6 +1,7 @@
 import db from '../../database.js';
 import { now } from '../../src/services/utils.js';
 import { calculateBillSync } from './calculatBillService.js';
+import { completeSessionWithSnapshot, endSession as legacyEndSession } from './sessionCompletionService.js';
 
 const getQuery = `
             SELECT 
@@ -68,66 +69,14 @@ export function createSession(data) {
 
 export function endSession(data) {
     try {
-        
-        // First, get the active session to calculate time difference
-        const getSessionQuery = db.prepare(getQuery + 'AND time_logs.rfid = ? ORDER BY time_logs.time_in DESC');
-        
-        const activeSession = getSessionQuery.get(data.rfid);
-        
-        if (!activeSession) {
-            throw new Error("No active session found for this RFID");
-        }
-        
-        const currentTime = now();
-        const timeOut = new Date(currentTime);
-        const timeIn = new Date(activeSession.time_in);
-        
-        // Calculate elapsed time in seconds using the service
-        const elapsed = Number((timeOut - timeIn) / 1000);
-        const duration = Number((elapsed / 3600).toFixed(2)); // Convert to hours
-        
-        // Prepare session object for bill calculation
-        const sessionForBilling = {
-            elapsed: elapsed,
-            rate_unit: activeSession.rate_unit,
-            rate_amount: activeSession.rate_amount,
-            time_in: activeSession.time_in,
-            benefits_type: activeSession.benefits_type,
-            value: activeSession.value
-        };
-        
-        const billingData = calculateBillSync(sessionForBilling);
-        const amountPaid = billingData[0].currentBill;
-        const billableSession = billingData[0].billableSession;
-
-        // Update the session with calculated amount
-        const updateQuery = db.prepare(`
-            UPDATE time_logs SET time_out = ?, status = ?, amount_paid = ?, duration = ?, billable_session = ? WHERE id = ?
-        `);
-            
-        console.log("Active Session: " + activeSession);
-        console.log("Time Out: " + timeOut);
-        console.log("Duration: " + duration);
-        console.log("Amount Paid: " + amountPaid);
-        console.log("Billable Session: " + billableSession);
-        
-        const result = updateQuery.run(currentTime, 'completed', parseFloat(amountPaid), parseFloat(duration), parseFloat(billableSession), activeSession.id);
-        
-        if (result.changes === 0) {
-            throw new Error("Failed to update session");
-        }
-        
-        console.log("Session ended successfully:", result);
-        return {
-            ...result,
-            duration: duration,
-            amountPaid: amountPaid,
-            rate: `₱${activeSession.rate_amount}/${activeSession.rate_unit}`
-        };
-        
+        // Use the new session completion service that captures billing snapshots
+        return completeSessionWithSnapshot(data);
     } catch (error) {
-        console.error("Database error:", error);
-        throw new Error(`Database error: ${error.message}`);
+        console.error("Error ending session with snapshot:", error);
+        
+        // Fallback to legacy method if snapshot capture fails
+        console.log("Falling back to legacy session completion method");
+        return legacyEndSession(data);
     }
 }
 

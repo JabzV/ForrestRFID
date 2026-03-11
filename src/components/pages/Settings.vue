@@ -1,5 +1,8 @@
 <template>
-  <div class="p-8 bg-background w-full overflow-x-hidden">
+  <div
+    class="p-8 w-full overflow-x-hidden"
+    :class="devMode ? 'bg-red-100' : 'bg-background'"
+  >
     <div class="flex gap-6">
       <!-- Session Profiles -->
       <div class="flex-1">
@@ -14,14 +17,21 @@
           >
             <!-- Table Header -->
             <CustomDataTable
-              :headers="['Name', 'Rate', 'Unit', 'Date Created', 'Actions']"
+              :headers="[
+                'Name',
+                'Rate',
+                'Unit',
+                'Price',
+                'Date Created',
+                'Actions',
+              ]"
               gap-class="gap-4"
             >
               <DataTableContentCard
                 v-for="profile in sessionProfiles"
                 :key="profile.id"
                 :item="profile"
-                :columnNumber="5"
+                :columnNumber="6"
                 gap-class="gap-4"
                 @edit="editProfile"
                 @delete="deleteProfile"
@@ -108,6 +118,18 @@
             />
           </CustomDataTable>
         </ConfigCard>
+
+        <ConfigCard
+          title="System Reset"
+          icon-class="pi pi-refresh"
+          :show-add-button="true"
+          add-button-text="Reset"
+          @add="resetAllData"
+        >
+          <div class="text-sm text-gray-600">
+            Deletes all data and restores default pricing and settings.
+          </div>
+        </ConfigCard>
       </div>
     </div>
 
@@ -116,7 +138,8 @@
         v-if="
           submitMode !== 'deleteProfile' &&
           submitMode !== 'deleteRole' &&
-          submitMode !== 'deletePromo'
+          submitMode !== 'deletePromo' &&
+          submitMode !== 'resetDatabase'
         "
         :dialogFields="dynamicFields"
         :initialData="payload"
@@ -126,7 +149,8 @@
         v-if="
           submitMode === 'deleteProfile' ||
           submitMode === 'deleteRole' ||
-          submitMode === 'deletePromo'
+          submitMode === 'deletePromo' ||
+          submitMode === 'resetDatabase'
         "
         :title="warningTitle"
         :message="warningMessage"
@@ -138,7 +162,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from "vue";
+import { ref, onMounted, onBeforeUnmount } from "vue";
 import ConfigCard from "../composables/Cards/ConfigCard.vue";
 import SessionConfigForm from "../composables/Forms/SessionConfigForm.vue";
 import { useTopbarButtonState } from "../../../store/vueStore/topbarButtonState";
@@ -177,6 +201,7 @@ import {
   updatePromo,
   deletePromo,
 } from "../../../store/vueStore/Settings/promoManagement";
+import { resetDatabase } from "../../../store/vueStore/Settings/resetDatabase";
 
 const sessionConfig = ref([]);
 const sessionProfiles = ref([]);
@@ -193,10 +218,22 @@ const originalSessionConfig = ref({});
 const sessionConfigPayload = ref({});
 const payload = ref({});
 const { toast } = useToast();
+const devMode = ref(false);
+
+const syncDevMode = () => {
+  if (typeof window === "undefined") return;
+  devMode.value = localStorage.getItem("devMode") === "true";
+};
 
 onMounted(async () => {
   useTopbarButtonState().setButtonState();
+  syncDevMode();
+  window.addEventListener("devmode-changed", syncDevMode);
   await loadData();
+});
+
+onBeforeUnmount(() => {
+  window.removeEventListener("devmode-changed", syncDevMode);
 });
 
 const loadData = async () => {
@@ -245,12 +282,23 @@ const handleSubmit = async (data) => {
       case "deletePromo":
         await deletePromo(payload.value.id);
         break;
+      case "resetDatabase":
+        await resetDatabase();
+        break;
     }
-    toast("Session profile updated successfully", "success");
+    if (submitMode.value === "resetDatabase") {
+      toast("Database reset successfully", "success");
+    } else {
+      toast("Session profile updated successfully", "success");
+    }
     customDialog.value.closeModal();
     await loadData();
   } catch (error) {
-    toast("An error occurred while updating the session profile", "danger");
+    if (submitMode.value === "resetDatabase") {
+      toast("An error occurred while resetting the database", "danger");
+    } else {
+      toast("An error occurred while updating the session profile", "danger");
+    }
     console.error(error);
   }
 };
@@ -304,6 +352,15 @@ const deleteSelectedPromo = (promo) => {
     "Are you sure you want to delete this promo?",
     promo,
     "deletePromo"
+  );
+};
+
+const resetAllData = () => {
+  openDeleteModal(
+    "Reset Database",
+    "This will delete ALL data (sessions, users, promos, settings) and re-seed defaults. This action cannot be undone. Continue?",
+    {},
+    "resetDatabase"
   );
 };
 

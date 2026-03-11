@@ -35,7 +35,11 @@ export async function captureBillingSnapshot(sessionId, billingBreakdown, sessio
                 id: sessionData.session_profile_id,
                 name: sessionData.session_profile_name,
                 rate_amount: sessionData.rate_amount,
-                rate_unit: sessionData.rate_unit
+                rate_unit: sessionData.rate_unit,
+                rate_value: sessionData.rate_value,
+                surcharge_amount: sessionData.surcharge_amount,
+                surcharge_minutes: sessionData.surcharge_minutes,
+                charge_immediately: sessionData.charge_immediately
             },
             
             // Member role snapshot (what was used at time of transaction)

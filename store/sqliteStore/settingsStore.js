@@ -1,20 +1,79 @@
 import db from '../../database.js';
+import { createSessionProfilesTable } from "../../database/migrations/session_profiles.js";
+import { createAccountRolesTable } from "../../database/migrations/account_roles.js";
+import { createSessionConfigTable } from "../../database/migrations/session_config.js";
+import { createPromosTable } from "../../database/migrations/promos.js";
+import { createUsersTable } from "../../database/migrations/users.js";
+import { createTimeLogsTable } from "../../database/migrations/time_logs.js";
+import { createPivotPromosToUserTable } from "../../database/migrations/pivot_promos_to_user.js";
+import { createAuditTrailsTable } from "../../database/migrations/audit_trails.js";
 
 //Session Profiles
 export function getSessionProfiles() {
-    const action = db.prepare('SELECT * FROM session_profiles');
+    const action = db.prepare(`
+        SELECT
+            id,
+            name,
+            rate_amount,
+            rate_unit,
+            rate_value,
+            surcharge_amount,
+            surcharge_minutes,
+            charge_immediately,
+            created_at,
+            updated_at,
+            deleted_at
+        FROM session_profiles
+    `);
     return action.all();
 }
 
 export function getSessionProfile(id) {
-    const action = db.prepare('SELECT * FROM session_profiles WHERE id = ?');
+    const action = db.prepare(`
+        SELECT
+            id,
+            name,
+            rate_amount,
+            rate_unit,
+            rate_value,
+            surcharge_amount,
+            surcharge_minutes,
+            charge_immediately,
+            created_at,
+            updated_at,
+            deleted_at
+        FROM session_profiles
+        WHERE id = ?
+    `);
     return action.get(id);
 }
 
 export function createSessionProfile(data) {
     try {
-        const action = db.prepare('INSERT INTO session_profiles (name, rate_amount, rate_unit) VALUES (?, ?, ?)');
-        return action.run(data.name, data.rate_amount, data.rate_unit);
+        const action = db.prepare(`
+            INSERT INTO session_profiles (
+                name,
+                rate_amount,
+                rate_unit,
+                rate_value,
+                surcharge_amount,
+                surcharge_minutes,
+                charge_immediately
+            ) VALUES (?, ?, ?, ?, ?, ?, ?)
+        `);
+        const rateValue = Number(data.rate_value) || 1;
+        const surchargeAmount = Number(data.surcharge_amount) || 0;
+        const surchargeMinutes = Number(data.surcharge_minutes) || 0;
+        const chargeImmediately = Number(data.charge_immediately) || 0;
+        return action.run(
+            data.name,
+            data.rate_amount,
+            data.rate_unit,
+            rateValue,
+            surchargeAmount,
+            surchargeMinutes,
+            chargeImmediately
+        );
     } catch (error) {
         console.error("Database error:", error);
         throw new Error(`Database error: ${error.message}`);
@@ -23,8 +82,25 @@ export function createSessionProfile(data) {
 
 export function updateSessionProfile(data) {
     try {
-        const action = db.prepare('UPDATE session_profiles SET name = ?, rate_amount = ?, rate_unit = ? WHERE id = ?');
-        return action.run(data.name, data.rate_amount, data.rate_unit, data.id);
+        const action = db.prepare(`
+            UPDATE session_profiles
+            SET name = ?, rate_amount = ?, rate_unit = ?, rate_value = ?, surcharge_amount = ?, surcharge_minutes = ?, charge_immediately = ?
+            WHERE id = ?
+        `);
+        const rateValue = Number(data.rate_value) || 1;
+        const surchargeAmount = Number(data.surcharge_amount) || 0;
+        const surchargeMinutes = Number(data.surcharge_minutes) || 0;
+        const chargeImmediately = Number(data.charge_immediately) || 0;
+        return action.run(
+            data.name,
+            data.rate_amount,
+            data.rate_unit,
+            rateValue,
+            surchargeAmount,
+            surchargeMinutes,
+            chargeImmediately,
+            data.id
+        );
     } catch (error) {
         console.error("Database error:", error);
         throw new Error(`Database error: ${error.message}`);
@@ -98,4 +174,39 @@ export function updatePromo(data) {
 export function deletePromo(id) {
     const action = db.prepare('DELETE FROM promos WHERE id = ?');
     return action.run(id);
+}
+
+export function resetDatabase() {
+    try {
+        const resetTransaction = db.transaction(() => {
+            // Delete data in order to satisfy FK constraints
+            db.prepare('DELETE FROM pivot_promos_to_user').run();
+            db.prepare('DELETE FROM time_logs').run();
+            db.prepare('DELETE FROM audit_trails').run();
+            db.prepare('DELETE FROM users').run();
+            db.prepare('DELETE FROM promos').run();
+            db.prepare('DELETE FROM session_profiles').run();
+            db.prepare('DELETE FROM account_roles').run();
+            db.prepare('DELETE FROM session_config').run();
+            
+            // Reset autoincrement counters
+            db.prepare('DELETE FROM sqlite_sequence').run();
+
+            // Re-run seeders (they only insert when tables are empty)
+            createAuditTrailsTable(db);
+            createSessionConfigTable(db);
+            createSessionProfilesTable(db);
+            createAccountRolesTable(db);
+            createPromosTable(db);
+            createUsersTable(db);
+            createPivotPromosToUserTable(db);
+            createTimeLogsTable(db);
+        });
+
+        resetTransaction();
+        return { success: true };
+    } catch (error) {
+        console.error("Database reset error:", error);
+        throw new Error(`Database reset error: ${error.message}`);
+    }
 }

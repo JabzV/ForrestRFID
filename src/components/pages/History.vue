@@ -1,5 +1,8 @@
 <template>
-  <div class="p-8 bg-background w-full overflow-x-hidden">
+  <div
+    class="p-8 w-full overflow-x-hidden"
+    :class="devMode ? 'bg-red-100' : 'bg-background'"
+  >
     <!-- Search and Filters Component -->
     <HistorySearchAndFilters
       :initialFilters="currentFilters"
@@ -60,7 +63,7 @@
 </template>
 
 <script setup>
-import { onMounted, ref, computed } from "vue";
+import { onMounted, onBeforeUnmount, ref, computed } from "vue";
 import UserCard from "../composables/Cards/UserCard.vue";
 import HistorySearchAndFilters from "../composables/Forms/HistorySearchAndFilters.vue";
 import Pagination from "../shared/Navigation/Pagination.vue";
@@ -88,6 +91,7 @@ const filteredHistory = ref([]);
 const paginatedHistory = ref([]);
 const currentPage = ref(1);
 const sessionDetailsModal = ref(null);
+const devMode = ref(false);
 const currentFilters = ref({
   searchQuery: "",
   dateFrom: "",
@@ -200,9 +204,20 @@ const exportToCSV = async () => {
   }
 };
 
+const syncDevMode = () => {
+  if (typeof window === "undefined") return;
+  devMode.value = localStorage.getItem("devMode") === "true";
+};
+
 onMounted(async () => {
   useTopbarButtonState().setButtonState("Export Data", exportToCSV);
+  syncDevMode();
+  window.addEventListener("devmode-changed", syncDevMode);
   await loadData();
+});
+
+onBeforeUnmount(() => {
+  window.removeEventListener("devmode-changed", syncDevMode);
 });
 
 const loadData = async () => {

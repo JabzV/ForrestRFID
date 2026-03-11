@@ -1,5 +1,8 @@
 <template>
-  <div class="p-8 bg-background w-full overflow-x-hidden">
+  <div
+    class="p-8 w-full overflow-x-hidden"
+    :class="devMode ? 'bg-red-100' : 'bg-background'"
+  >
     <!-- Search and Filters Component -->
     <SearchAndFilters
       :initialFilters="currentFilters"
@@ -78,13 +81,29 @@
       <div v-if="isScanning && !isDeleting">
         <input id="rfidInput" maxlength="10" class="opacity-0 h-1" />
         <ScanningDisplay :timeout="scanTimer" @timeout="handleScanTimeout" />
+        <div v-if="devMode" class="mt-4 flex items-center gap-3">
+          <input
+            v-model="manualRfid"
+            type="text"
+            maxlength="10"
+            placeholder="Enter RFID manually"
+            class="px-4 h-10 block w-full border border-gray-300 rounded-xl sm:text-sm focus:border-none focus:ring-1 focus:ring-primary1 outline-none"
+          />
+          <button
+            type="button"
+            class="px-4 h-10 rounded-xl bg-primary1/95 text-white hover:opacity-85 transition-all duration-200"
+            @click="handleManualRfid"
+          >
+            Use RFID
+          </button>
+        </div>
       </div>
     </CustomDialog>
   </div>
 </template>
 
 <script setup>
-import { onMounted, ref, computed } from "vue";
+import { onMounted, onBeforeUnmount, ref, computed } from "vue";
 
 import ScanningDisplay from "../composables/Display/ScanningDIsplay.vue";
 import UserCard from "../composables/Cards/UserCard.vue";
@@ -126,6 +145,9 @@ const scanTimer = ref(timerValue); // 30 seconds timeout
 const users = ref([]);
 const userListModalFields = ref([]);
 const payload = ref({});
+const pendingUserData = ref(null);
+const manualRfid = ref("");
+const devMode = ref(false);
 
 // New state for filtering and pagination
 const isLoading = ref(false);
@@ -164,10 +186,21 @@ const hasActiveFilters = computed(() => {
   );
 });
 
+const syncDevMode = () => {
+  if (typeof window === "undefined") return;
+  devMode.value = localStorage.getItem("devMode") === "true";
+};
+
 onMounted(async () => {
   useTopbarButtonState().setButtonState("Add User", () => openModal("addMode"));
+  syncDevMode();
+  window.addEventListener("devmode-changed", syncDevMode);
   userListModalFields.value = await getUserListModalFields();
   loadData();
+});
+
+onBeforeUnmount(() => {
+  window.removeEventListener("devmode-changed", syncDevMode);
 });
 
 const loadData = async () => {
@@ -274,6 +307,15 @@ const closeModal = () => {
   }
 };
 
+const resetScanState = () => {
+  isScanning.value = false;
+  const input = document.getElementById("rfidInput");
+  if (input) input.value = "";
+  scanTimer.value = timerValue;
+  manualRfid.value = "";
+  pendingUserData.value = null;
+};
+
 const handleSubmit = async (data) => {
   if (isEditing.value) {
     await updateUserFunction(data);
@@ -296,42 +338,42 @@ const updateUserFunction = async (data) => {
   }
 };
 
+const processCreateUser = async (rfid, data) => {
+  const cleanData = JSON.parse(JSON.stringify({ ...data, rfid }));
+  try {
+    await ipcHandle("createUser", cleanData);
+    closeModal();
+    toast("User added successfully", "success");
+    resetScanState();
+  } catch (error) {
+    closeModal();
+    resetScanState();
+    if (error.message.includes("UNIQUE constraint failed: users.rfid")) {
+      toast("Card already used", "danger");
+    } else {
+      toast(error, "danger");
+    }
+  } finally {
+    loadData();
+  }
+};
+
 const createUserFunction = async (data) => {
+  pendingUserData.value = { ...data };
   isScanning.value = true;
   rfidScannerPromise = rfidScanner("rfidInput");
 
   rfidScannerPromise.then(
     async (rfid) => {
       if (!isScanning.value) return; // Check if scanning was cancelled
-
-      data.rfid = rfid;
-      const cleanData = JSON.parse(JSON.stringify(data));
-      try {
-        await ipcHandle("createUser", cleanData);
-        closeModal();
-        toast("User added successfully", "success");
-        isScanning.value = false;
-        document.getElementById("rfidInput").value = "";
-        scanTimer.value = timerValue;
-      } catch (error) {
-        closeModal();
-        isScanning.value = false;
-        if (error.message.includes("UNIQUE constraint failed: users.rfid")) {
-          toast("Card already used", "danger");
-        } else {
-          toast(error, "danger");
-        }
-      } finally {
-        loadData();
-      }
+      await processCreateUser(rfid, data);
     },
     (error) => {
       if (!isScanning.value) return; // Check if scanning was cancelled
 
       inputDialog.value.closeModal();
-      isScanning.value = false;
+      resetScanState();
       toast(error, "danger");
-      scanTimer.value = timerValue;
     }
   );
 };
@@ -352,7 +394,7 @@ const handleDelete = async () => {
 
 const handleScanTimeout = () => {
   if (isScanning.value) {
-    isScanning.value = false;
+    resetScanState();
     inputDialog.value.closeModal();
     toast("Scanning timeout - Please try again", "danger");
   }
@@ -371,5 +413,21 @@ const handleEditButton = (user) => {
 const handleDeleteButton = (user) => {
   payload.value = user;
   openModal("deleteMode");
+};
+
+const handleManualRfid = async () => {
+  const rfid = manualRfid.value.trim();
+  if (!rfid) {
+    toast("Please enter an RFID", "danger");
+    return;
+  }
+
+  const data = pendingUserData.value;
+  if (!data) {
+    toast("No pending user data found", "danger");
+    return;
+  }
+
+  await processCreateUser(rfid, data);
 };
 </script>

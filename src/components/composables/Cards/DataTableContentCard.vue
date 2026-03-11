@@ -18,6 +18,12 @@
         >
           {{ item === "fixed" ? "₱" : "%" }}
         </span>
+        <span
+          v-else-if="key === 'charge_immediately'"
+          class="text-gray-800 font-medium flex justify-center"
+        >
+          {{ Number(item) === 1 ? "Yes" : "No" }}
+        </span>
         <span v-else class="text-gray-800 font-medium flex justify-center">{{
           item
         }}</span>
@@ -69,7 +75,14 @@ const props = defineProps({
 const profileWithoutId = computed(() => {
   const filtered = Object.fromEntries(
     Object.entries(props.item).filter(
-      ([key]) => key !== "id" && key !== "updated_at" && key !== "deleted_at"
+      ([key]) =>
+        key !== "id" &&
+        key !== "updated_at" &&
+        key !== "created_at" &&
+        key !== "deleted_at" &&
+        key !== "rate_value" &&
+        key !== "surcharge_amount" &&
+        key !== "surcharge_minutes"
     )
   );
   if (filtered.created_at) {

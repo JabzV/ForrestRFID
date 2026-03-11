@@ -1,5 +1,15 @@
 <template>
   <div class="mb-7">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="text-xl font-semibold text-gray-800">History</h2>
+      <button
+        type="button"
+        class="text-xs text-gray-400 opacity-0 hover:opacity-100 transition-opacity"
+        @click="toggleDevMode"
+      >
+        Dev Mode: {{ devMode ? "On" : "Off" }}
+      </button>
+    </div>
     <!-- Filters Section -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
       <div class="flex flex-col gap-2">
@@ -92,7 +102,7 @@
 </template>
 
 <script setup>
-import { ref, watch } from "vue";
+import { ref, watch, onMounted } from "vue";
 import CustomDropdown from "../../shared/Forms/CustomDropdown.vue";
 
 const props = defineProps({
@@ -113,6 +123,7 @@ const memberTypeFilter = ref("");
 const totalTimeSort = ref("");
 const totalPaidSort = ref("");
 const itemsPerPage = ref(10);
+const devMode = ref(false);
 
 // Options for dropdowns
 const sortOptions = [
@@ -144,6 +155,26 @@ if (props.initialFilters) {
   totalPaidSort.value = props.initialFilters.totalPaidSort || "";
   itemsPerPage.value = props.initialFilters.itemsPerPage || 10;
 }
+
+const loadDevMode = () => {
+  if (typeof window === "undefined") return;
+  devMode.value = localStorage.getItem("devMode") === "true";
+};
+
+const toggleDevMode = () => {
+  const nextValue = !devMode.value;
+  devMode.value = nextValue;
+  if (typeof window !== "undefined") {
+    localStorage.setItem("devMode", String(nextValue));
+    window.dispatchEvent(
+      new CustomEvent("devmode-changed", { detail: nextValue })
+    );
+  }
+};
+
+onMounted(() => {
+  loadDevMode();
+});
 
 // Debounced search
 let searchTimeout = null;

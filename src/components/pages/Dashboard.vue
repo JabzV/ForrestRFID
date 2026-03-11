@@ -1,5 +1,8 @@
 <template>
-  <div class="p-3 md:p-4 lg:p-6 xl:p-8 bg-background w-full overflow-x-hidden">
+  <div
+    class="p-3 md:p-4 lg:p-6 xl:p-8 w-full overflow-x-hidden"
+    :class="devMode ? 'bg-red-100' : 'bg-background'"
+  >
     <div class="flex flex-col 2xl:flex-row gap-3 md:gap-4 lg:gap-6">
       <!-- Left Column: blabla and Active Sessions -->
       <div class="w-full 2xl:w-7/12 flex flex-col gap-3 md:gap-4 lg:gap-6">
@@ -290,13 +293,29 @@
       <div v-if="isScanning">
         <input id="rfidInput" maxlength="10" class="opacity-0 h-1" />
         <ScanningDisplay :timeout="scanTimer" @timeout="handleScanTimeout" />
+        <div v-if="devMode" class="mt-4 flex items-center gap-3">
+          <input
+            v-model="manualRfid"
+            type="text"
+            maxlength="10"
+            placeholder="Enter RFID manually"
+            class="px-4 h-10 block w-full border border-gray-300 rounded-xl sm:text-sm focus:border-none focus:ring-1 focus:ring-primary1 outline-none"
+          />
+          <button
+            type="button"
+            class="px-4 h-10 rounded-xl bg-primary1/95 text-white hover:opacity-85 transition-all duration-200"
+            @click="handleManualRfid"
+          >
+            Use RFID
+          </button>
+        </div>
       </div>
     </CustomDialog>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, nextTick } from "vue";
+import { ref, computed, onMounted, nextTick, onBeforeUnmount } from "vue";
 import { useRouter } from "vue-router";
 import ConfigCard from "../composables/Cards/ConfigCard.vue";
 import CurrentRevenueCard from "../composables/Cards/CurrentRevenueCard.vue";
@@ -337,6 +356,9 @@ const submitMode = ref(null);
 const { toast } = useToast();
 const isScanning = ref(false);
 const payload = ref({});
+const pendingSessionData = ref(null);
+const manualRfid = ref("");
+const devMode = ref(false);
 let timerValue = 15000;
 let rfidScannerPromise = null;
 const scanTimer = ref(timerValue); // 30 seconds timeout
@@ -344,7 +366,13 @@ const activeSessions = ref([]);
 
 onMounted(async () => {
   useTopbarButtonState().setButtonState("Add Session", openModal);
+  syncDevMode();
+  window.addEventListener("devmode-changed", syncDevMode);
   loadDashboardData();
+});
+
+onBeforeUnmount(() => {
+  window.removeEventListener("devmode-changed", syncDevMode);
 });
 
 const loadDashboardData = async () => {
@@ -386,6 +414,8 @@ const onDialogClosed = () => {
   const input = document.getElementById("rfidInput");
   if (input) input.value = "";
   scanTimer.value = timerValue;
+  manualRfid.value = "";
+  pendingSessionData.value = null;
 };
 
 const loadModalData = async () => {
@@ -439,66 +469,89 @@ const handleSessionSearch = (value) => {
   searchTerm.value = value;
 };
 
+const syncDevMode = () => {
+  if (typeof window === "undefined") return;
+  devMode.value = localStorage.getItem("devMode") === "true";
+};
+
+const resetScanState = () => {
+  isScanning.value = false;
+  const input = document.getElementById("rfidInput");
+  if (input) input.value = "";
+  scanTimer.value = timerValue;
+  manualRfid.value = "";
+  pendingSessionData.value = null;
+};
+
+const processAddSession = async (rfid, data) => {
+  // Validate if the scanned RFID matches the selected member type
+  const isMemberCard = await window.electron.ipcRenderer.invoke(
+    "checkIfMember",
+    rfid
+  );
+  const selectedMemberType = data.member_type;
+
+  if (selectedMemberType === "Member" && !isMemberCard) {
+    resetScanState();
+    closeModal();
+    toast(
+      "Error: You selected 'Member' but scanned a Non-Member card. Please scan a registered member card or select 'Non-Member'.",
+      "danger"
+    );
+    return;
+  }
+
+  if (selectedMemberType === "Non-Member" && isMemberCard) {
+    resetScanState();
+    closeModal();
+    toast(
+      "Error: You selected 'Non-Member' but scanned a Member card. Please scan a non-member card or select 'Member'.",
+      "danger"
+    );
+    return;
+  }
+
+  const cleanData = JSON.parse(JSON.stringify({ ...data, rfid }));
+  try {
+    await createSession(cleanData);
+    closeModal();
+    toast("Session created successfully", "success");
+    resetScanState();
+    loadDashboardData();
+  } catch (error) {
+    closeModal();
+    resetScanState();
+    toast(error.message || error, "danger");
+  }
+};
+
+const processEndSession = async (rfid) => {
+  const cleanData = JSON.parse(JSON.stringify({ rfid }));
+  try {
+    await endSession(cleanData);
+    toast("Session ended successfully", "success");
+    resetScanState();
+    closeModal();
+    loadDashboardData();
+  } catch (error) {
+    resetScanState();
+    toast(error.message || error, "danger");
+    closeModal();
+  }
+};
+
 const handleSubmit = (data) => {
+  pendingSessionData.value = { ...data };
   isScanning.value = true;
   rfidScannerPromise = rfidScanner("rfidInput");
 
   rfidScannerPromise
     .then(async (rfid) => {
       if (!isScanning.value) return;
-      data.rfid = rfid;
-
-      // Validate if the scanned RFID matches the selected member type
-      const isMemberCard = await window.electron.ipcRenderer.invoke(
-        "checkIfMember",
-        rfid
-      );
-      const selectedMemberType = data.member_type;
-
-      if (selectedMemberType === "Member" && !isMemberCard) {
-        isScanning.value = false;
-        document.getElementById("rfidInput").value = "";
-        scanTimer.value = timerValue;
-        closeModal();
-        toast(
-          "Error: You selected 'Member' but scanned a Non-Member card. Please scan a registered member card or select 'Non-Member'.",
-          "danger"
-        );
-        return;
-      }
-
-      if (selectedMemberType === "Non-Member" && isMemberCard) {
-        isScanning.value = false;
-        document.getElementById("rfidInput").value = "";
-        scanTimer.value = timerValue;
-        closeModal();
-        toast(
-          "Error: You selected 'Non-Member' but scanned a Member card. Please scan a non-member card or select 'Member'.",
-          "danger"
-        );
-        return;
-      }
-
-      const cleanData = JSON.parse(JSON.stringify(data));
-      try {
-        const result = await createSession(cleanData);
-        closeModal();
-        toast("Session created successfully", "success");
-        isScanning.value = false;
-        document.getElementById("rfidInput").value = "";
-        scanTimer.value = timerValue;
-        loadDashboardData();
-      } catch (error) {
-        closeModal();
-        isScanning.value = false;
-        document.getElementById("rfidInput").value = "";
-        scanTimer.value = timerValue;
-        toast(error.message || error, "danger");
-      }
-      closeModal();
+      await processAddSession(rfid, data);
     })
     .catch((error) => {
-      isScanning.value = false;
+      resetScanState();
       toast("RFID scanning failed: " + error, "danger");
     });
 };
@@ -520,26 +573,10 @@ const handleEndSession = async () => {
         .then(async (rfid) => {
           console.log("RFID scanned:", rfid);
           if (!isScanning.value) return;
-
-          let data = { rfid: rfid };
-          const cleanData = JSON.parse(JSON.stringify(data));
-
-          try {
-            const result = await endSession(cleanData);
-            toast("Session ended successfully", "success");
-            isScanning.value = false;
-            document.getElementById("rfidInput").value = "";
-            scanTimer.value = timerValue;
-            closeModal();
-            loadDashboardData();
-          } catch (error) {
-            isScanning.value = false;
-            toast(error.message || error, "danger");
-            closeModal();
-          }
+          await processEndSession(rfid);
         })
         .catch((error) => {
-          isScanning.value = false;
+          resetScanState();
           toast("RFID scanning failed: " + error, "danger");
           closeModal();
         });
@@ -559,7 +596,7 @@ const proceedCancelSession = async () => {
     toast("Session cancelled successfully", "success");
 
     //variable setting
-    isScanning.value = false;
+    resetScanState();
     closeModal();
     loadDashboardData();
 
@@ -579,6 +616,25 @@ const navigateToUsers = () => {
 
 const navigateToHistory = () => {
   router.push("/history");
+};
+
+const handleManualRfid = async () => {
+  const rfid = manualRfid.value.trim();
+  if (!rfid) {
+    toast("Please enter an RFID", "danger");
+    return;
+  }
+
+  if (submitMode.value === "addSession") {
+    const data = pendingSessionData.value;
+    if (!data) {
+      toast("No pending session data found", "danger");
+      return;
+    }
+    await processAddSession(rfid, data);
+  } else if (submitMode.value === "endSession") {
+    await processEndSession(rfid);
+  }
 };
 </script>
 

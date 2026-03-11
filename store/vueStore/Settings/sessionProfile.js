@@ -68,7 +68,41 @@ export const sessionProfileModalFields = [
     type: "dropdown",
     label: "Rate Unit",
     isRequired: true,
-    options: ["hr", "day"],
+    options: ["hr", "day", "week", "month"],
     divClass: "col-span-1 lg:col-span-2",
+  },
+  {
+    field: "rate_value",
+    placeholder: "Num of hrs/days/weeks/etc.",
+    type: "text",
+    label: "Rate Value",
+    isRequired: true,
+  },
+  {
+    field: "surcharge_amount",
+    placeholder: "Surcharge Amount (₱)",
+    type: "text",
+    label: "Surcharge Amount",
+    isRequired: false,
+  },
+  {
+    field: "surcharge_minutes",
+    placeholder: "Surcharge Minutes",
+    type: "text",
+    label: "Surcharge Minutes",
+    isRequired: false,
+  },
+  {
+    field: "charge_immediately",
+    placeholder: "Charge Immediately",
+    type: "dropdown",
+    label: "Charge Immediately",
+    isRequired: false,
+    options: [
+      { name: "No", id: 0 },
+      { name: "Yes", id: 1 }
+    ],
+    divClass: "col-span-1 lg:col-span-2",
+    subtext: "If Yes, charge the full rate on scan-in."
   }
 ];

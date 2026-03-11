@@ -13,7 +13,7 @@ export async function getSessionDialogFields() {
             placeholder: "Select Session Profile",
             type: "dropdown",
             options: sessionProfileData.map(profile => ({
-                name: `${profile.name} - ₱${profile.rate_amount}/${profile.rate_unit}`,
+                name: `${profile.name} - ₱${profile.rate_amount}/${profile.rate_value || 1} ${profile.rate_unit}`,
                 id: profile.id
             })),
             required: true

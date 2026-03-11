@@ -22,6 +22,10 @@ export function completeSessionWithSnapshot(data) {
                 time_logs.session_profile_id,
                 session_profiles.rate_amount,
                 session_profiles.rate_unit,
+                session_profiles.rate_value,
+                session_profiles.surcharge_amount,
+                session_profiles.surcharge_minutes,
+                session_profiles.charge_immediately,
                 session_profiles.name as session_profile_name,
                 COALESCE(substr(users.first_name, 1, instr(users.first_name || ' ', ' ') - 1),'Non') || ' ' || COALESCE(users.last_name, 'Member') AS full_name,
                 users.account_role_id,
@@ -56,9 +60,13 @@ export function completeSessionWithSnapshot(data) {
             elapsed: elapsed,
             rate_unit: activeSession.rate_unit,
             rate_amount: activeSession.rate_amount,
+            rate_value: activeSession.rate_value,
             time_in: activeSession.time_in,
             benefits_type: activeSession.benefits_type,
-            value: activeSession.value
+            value: activeSession.value,
+            surcharge_amount: activeSession.surcharge_amount,
+            surcharge_minutes: activeSession.surcharge_minutes,
+            charge_immediately: activeSession.charge_immediately
         };
         
         const billingData = calculateBillSync(sessionForBilling);
@@ -110,7 +118,7 @@ export function completeSessionWithSnapshot(data) {
             sessionId: activeSession.id,
             duration: duration,
             amountPaid: amountPaid,
-            rate: `₱${activeSession.rate_amount}/${activeSession.rate_unit}`
+            rate: `₱${activeSession.rate_amount}/${activeSession.rate_value} ${activeSession.rate_unit}`
         };
         
     } catch (error) {
@@ -163,7 +171,10 @@ function captureSessionBillingSnapshot(sessionId, sessionData, calculationResult
                 id: sessionData.session_profile_id,
                 name: sessionData.session_profile_name,
                 rate_amount: sessionData.rate_amount,
-                rate_unit: sessionData.rate_unit
+                rate_unit: sessionData.rate_unit,
+                surcharge_amount: sessionData.surcharge_amount,
+                surcharge_minutes: sessionData.surcharge_minutes,
+                charge_immediately: sessionData.charge_immediately
             },
             
             // Member role snapshot
@@ -233,6 +244,10 @@ export function endSession(data) {
                 time_logs.session_profile_id,
                 session_profiles.rate_amount,
                 session_profiles.rate_unit,
+                session_profiles.rate_value,
+                session_profiles.surcharge_amount,
+                session_profiles.surcharge_minutes,
+                session_profiles.charge_immediately,
                 COALESCE(substr(users.first_name, 1, instr(users.first_name || ' ', ' ') - 1),'Non') || ' ' || COALESCE(users.last_name, 'Member') AS full_name,
                 users.account_role_id,
                 account_roles.benefits_type,
@@ -267,9 +282,13 @@ export function endSession(data) {
             elapsed: elapsed,
             rate_unit: activeSession.rate_unit,
             rate_amount: activeSession.rate_amount,
+            rate_value: activeSession.rate_value,
             time_in: activeSession.time_in,
             benefits_type: activeSession.benefits_type,
-            value: activeSession.value
+            value: activeSession.value,
+            surcharge_amount: activeSession.surcharge_amount,
+            surcharge_minutes: activeSession.surcharge_minutes,
+            charge_immediately: activeSession.charge_immediately
         };
         
         const billingData = calculateBillSync(sessionForBilling);
@@ -298,7 +317,7 @@ export function endSession(data) {
             ...result,
             duration: duration,
             amountPaid: amountPaid,
-            rate: `₱${activeSession.rate_amount}/${activeSession.rate_unit}`
+            rate: `₱${activeSession.rate_amount}/${activeSession.rate_value} ${activeSession.rate_unit}`
         };
         
     } catch (error) {

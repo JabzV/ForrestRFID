@@ -21,6 +21,10 @@ export function getSessionDetailsById(sessionId) {
             session_profiles.name as session_profile_name,
             session_profiles.rate_amount,
             session_profiles.rate_unit,
+            session_profiles.rate_value,
+            session_profiles.surcharge_amount,
+            session_profiles.surcharge_minutes,
+            session_profiles.charge_immediately,
             account_roles.benefits_type,
             account_roles.value,
             account_roles.name as role_name

@@ -10,6 +10,61 @@ async function getSessionConfig() {
   return data;
 };
 
+const RATE_UNIT_SECONDS = {
+  hr: 3600,
+  day: 86400,
+  week: 7 * 86400,
+  month: 30 * 86400
+};
+
+function getRateUnitSeconds(rateUnit) {
+  return RATE_UNIT_SECONDS[rateUnit] || 0;
+}
+
+function calculateBaseAmount(billableSeconds, rateAmount, rateUnit, rateValue) {
+  const amount = Number(rateAmount) || 0;
+  if (amount <= 0) {
+    return 0;
+  }
+
+  const unitSeconds = getRateUnitSeconds(rateUnit);
+  const value = Math.max(1, Number(rateValue) || 1);
+  if (unitSeconds <= 0) {
+    return 0;
+  }
+
+  if (rateUnit === 'hr' && value === 1) {
+    return (billableSeconds / 3600) * amount;
+  }
+
+  return Math.ceil(billableSeconds / (unitSeconds * value)) * amount;
+}
+
+function calculateSurcharge(billableSeconds, session) {
+  const surchargeAmount = Number(session.surcharge_amount) || 0;
+  const surchargeMinutes = Number(session.surcharge_minutes) || 0;
+
+  if (surchargeAmount <= 0 || surchargeMinutes <= 0) {
+    return 0;
+  }
+
+  const unitSeconds = getRateUnitSeconds(session.rate_unit);
+  const value = Math.max(1, Number(session.rate_value) || 1);
+  if (unitSeconds <= 0) {
+    return 0;
+  }
+
+  const baseUnitSeconds = unitSeconds * value;
+  if (billableSeconds <= baseUnitSeconds) {
+    return 0;
+  }
+
+  const extraSeconds = billableSeconds - baseUnitSeconds;
+  const intervalSeconds = surchargeMinutes * 60;
+  const surchargeCount = Math.ceil(extraSeconds / intervalSeconds);
+  return surchargeCount * surchargeAmount;
+}
+
 function filterApplicablePromos(time_in_date, promos) {
     const time_in = new Date(time_in_date);
     return promos.filter(promo => {
@@ -36,22 +91,29 @@ export const calculateBill = async (session) => {
   const enable_promos = sessionConfig[0].enable_promos;
 
   let billableSession = Math.max(session.elapsed - grace_period * 60, 0);
+  const chargeImmediately = Number(session.charge_immediately) === 1;
 
   if (time_rounding > 0) {
     const billableSessionMinutes = Math.ceil((billableSession / 60) / time_rounding) * time_rounding;
     billableSession = billableSessionMinutes * 60;
   }
   
-  if (billableSession < (minimum_billable_session * 60)) {
+  if (!chargeImmediately && billableSession < (minimum_billable_session * 60)) {
     return 0;
   }
   
   //Calculation (keep numeric until final rounding)
   let currentBill = 0;
-  if (session.rate_unit === 'hr') {
-    currentBill = (billableSession / 3600) * (session.rate_amount || 0);
-  } else if (session.rate_unit === 'day') {
-    currentBill = Math.ceil(billableSession / 86400) * (session.rate_amount || 0);
+  if (chargeImmediately) {
+    currentBill = Number(session.rate_amount) || 0;
+  } else {
+    currentBill = calculateBaseAmount(
+      billableSession,
+      session.rate_amount,
+      session.rate_unit,
+      session.rate_value
+    );
+    currentBill += calculateSurcharge(billableSession, session);
   }
 
   //Apply Discount

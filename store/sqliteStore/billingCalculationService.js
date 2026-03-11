@@ -1,6 +1,61 @@
 import db from '../../database.js';
 import { getSessionConfig, getPromos } from './settingsStore.js';
 
+const RATE_UNIT_SECONDS = {
+    hr: 3600,
+    day: 86400,
+    week: 7 * 86400,
+    month: 30 * 86400
+};
+
+function getRateUnitSeconds(rateUnit) {
+    return RATE_UNIT_SECONDS[rateUnit] || 0;
+}
+
+function calculateBaseAmount(billableSeconds, rateAmount, rateUnit, rateValue) {
+    const amount = Number(rateAmount) || 0;
+    if (amount <= 0) {
+        return 0;
+    }
+
+    const unitSeconds = getRateUnitSeconds(rateUnit);
+    const value = Math.max(1, Number(rateValue) || 1);
+    if (unitSeconds <= 0) {
+        return 0;
+    }
+
+    if (rateUnit === 'hr' && value === 1) {
+        return (billableSeconds / 3600) * amount;
+    }
+
+    return Math.ceil(billableSeconds / (unitSeconds * value)) * amount;
+}
+
+function calculateSurcharge(billableSeconds, session) {
+    const surchargeAmount = Number(session.surcharge_amount) || 0;
+    const surchargeMinutes = Number(session.surcharge_minutes) || 0;
+
+    if (surchargeAmount <= 0 || surchargeMinutes <= 0) {
+        return 0;
+    }
+
+    const unitSeconds = getRateUnitSeconds(session.rate_unit);
+    const value = Math.max(1, Number(session.rate_value) || 1);
+    if (unitSeconds <= 0) {
+        return 0;
+    }
+
+    const baseUnitSeconds = unitSeconds * value;
+    if (billableSeconds <= baseUnitSeconds) {
+        return 0;
+    }
+
+    const extraSeconds = billableSeconds - baseUnitSeconds;
+    const intervalSeconds = surchargeMinutes * 60;
+    const surchargeCount = Math.ceil(extraSeconds / intervalSeconds);
+    return surchargeCount * surchargeAmount;
+}
+
 /**
  * Main process billing calculation service
  * This calculates detailed billing WITHOUT using IPC (for use during session completion)
@@ -39,6 +94,7 @@ export function calculateDetailedBillingSync(session) {
 
         // Calculate billable session
         let billableSeconds, billableHours, isBelowMinimum;
+        const chargeImmediately = Number(session.charge_immediately) === 1;
         
         if (session.status?.toLowerCase() === 'cancelled') {
             billableSeconds = 0;
@@ -47,7 +103,7 @@ export function calculateDetailedBillingSync(session) {
         } else {
             billableSeconds = Math.max(elapsedSeconds - (gracePeriod * 60), 0);
             billableHours = (billableSeconds / 3600).toFixed(2);
-            isBelowMinimum = billableSeconds < (minimumBillableSession * 60);
+            isBelowMinimum = !chargeImmediately && billableSeconds < (minimumBillableSession * 60);
         }
         
         if (isBelowMinimum) {
@@ -92,18 +148,26 @@ export function calculateDetailedBillingSync(session) {
         }
 
         // Apply time rounding (fixed blocks)
-        if (timeRounding > 0) {
+        if (!chargeImmediately && timeRounding > 0) {
             const billableMinutes = Math.ceil((billableSeconds / 60) / timeRounding) * timeRounding;
             billableSeconds = billableMinutes * 60;
         }
 
         // Calculate base amount
         let baseAmount = 0;
-        if (session.rate_unit === 'hr') {
-            baseAmount = (billableSeconds / 3600) * (session.rate_amount || 0);
-        } else if (session.rate_unit === 'day') {
-            baseAmount = Math.ceil(billableSeconds / 86400) * (session.rate_amount || 0);
+        let surchargeAmount = 0;
+        if (chargeImmediately) {
+            baseAmount = Number(session.rate_amount) || 0;
+        } else {
+            baseAmount = calculateBaseAmount(
+                billableSeconds,
+                session.rate_amount,
+                session.rate_unit,
+                session.rate_value
+            );
+            surchargeAmount = calculateSurcharge(billableSeconds, session);
         }
+        const subtotalAmount = baseAmount + surchargeAmount;
 
         // Calculate discounts using the SAME logic as calculateBillSync for consistency
         // This ensures the snapshot matches what was actually charged
@@ -141,7 +205,7 @@ export function calculateDetailedBillingSync(session) {
         }
 
         // Apply combined percentage discount (matching calculateBillSync logic)
-        let amountAfterFixed = baseAmount - fixedDiscountAmount;
+        let amountAfterFixed = Math.max(0, subtotalAmount - fixedDiscountAmount);
         let percentageDiscountAmount = 0;
         
         if (totalDiscountPercentage > 0) {
@@ -150,7 +214,7 @@ export function calculateDetailedBillingSync(session) {
         
         // Calculate individual discount amounts for display
         if (session.benefits_type === 'percentage' && session.value > 0) {
-            memberDiscount.amount = baseAmount * (session.value / 100);
+            memberDiscount.amount = subtotalAmount * (session.value / 100);
         }
         
         // Calculate promo amounts proportionally
@@ -159,7 +223,7 @@ export function calculateDetailedBillingSync(session) {
             const promoPercentageTotal = promoDiscounts.reduce((sum, p) => sum + p.value, 0);
             promoDiscounts = promoDiscounts.map(promo => {
                 // Calculate proportional amount based on base amount
-                const promoAmount = baseAmount * (promo.value / 100);
+                const promoAmount = subtotalAmount * (promo.value / 100);
                 totalPromoDiscount += promoAmount;
                 return {
                     ...promo,
@@ -181,9 +245,25 @@ export function calculateDetailedBillingSync(session) {
             { label: "Elapsed Time", value: formatDuration(elapsedSeconds), type: "info" },
             { label: "Grace Period", value: `${gracePeriod} minutes`, type: "info" },
             { label: "Billable Time", value: formatDuration(billableSeconds), type: "info" },
-            { label: "Rate", value: `₱${session.rate_amount || 0}/${session.rate_unit || 'hr'}`, type: "info" },
+            { label: "Rate", value: `₱${session.rate_amount || 0}/${session.rate_value || 1} ${session.rate_unit || 'hr'}`, type: "info" },
             { label: "Base Amount", value: `₱${baseAmount.toFixed(2)}`, type: "base" }
         ];
+
+        if (chargeImmediately) {
+            breakdown.push({
+                label: "Charge Immediately",
+                value: "Yes",
+                type: "info"
+            });
+        }
+
+        if (surchargeAmount > 0) {
+            breakdown.push({
+                label: "Surcharge",
+                value: `+₱${surchargeAmount.toFixed(2)}`,
+                type: "base"
+            });
+        }
 
         if (memberDiscount.amount > 0) {
             breakdown.push({
@@ -237,9 +317,10 @@ export function calculateDetailedBillingSync(session) {
             rateInfo: {
                 amount: session.rate_amount || 0,
                 unit: session.rate_unit || 'hr',
-                formatted: `₱${session.rate_amount || 0}/${session.rate_unit || 'hr'}`
+                value: session.rate_value || 1,
+                formatted: `₱${session.rate_amount || 0}/${session.rate_value || 1} ${session.rate_unit || 'hr'}`
             },
-            baseAmount: baseAmount,
+            baseAmount: subtotalAmount,
             memberDiscount: memberDiscount,
             promoDiscounts: promoDiscounts,
             totalDiscount: totalDiscount,

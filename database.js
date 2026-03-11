@@ -14,6 +14,8 @@ import { createPromosTable } from "./database/migrations/promos.js";
 import { createPivotPromosToUserTable } from "./database/migrations/pivot_promos_to_user.js";
 import { createAuditTrailsTable } from "./database/migrations/audit_trails.js";
 import { addBillingSnapshotColumns } from "./database/migrations/add_billing_snapshot.js";
+import { addSessionProfileChargeImmediatelyColumn } from "./database/migrations/add_session_profile_charge_immediately.js";
+import { addSessionProfileRateValueAndSurchargeMinutes } from "./database/migrations/add_session_profile_rate_value_and_surcharge_minutes.js";
 
 // Store DB in app's userData directory (persists across app updates)
 const userDataPath = app.getPath('userData');
@@ -42,6 +44,8 @@ createTimeLogsTable(db);
 
 // Run migration to add billing snapshot columns
 addBillingSnapshotColumns(db);
+addSessionProfileChargeImmediatelyColumn(db);
+addSessionProfileRateValueAndSurchargeMinutes(db);
 
 
 export default db;

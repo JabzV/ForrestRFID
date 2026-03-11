@@ -70,6 +70,7 @@
         :disabled="isViewing"
         :showSubmitButton="!isViewing"
         @submit:data="handleSubmit"
+        @watch:payload="handlePayloadChange"
       />
       <DeleteDialog
         v-if="isDeleting"
@@ -104,6 +105,7 @@
 
 <script setup>
 import { onMounted, onBeforeUnmount, ref, computed } from "vue";
+import dayjs from "dayjs";
 
 import ScanningDisplay from "../composables/Display/ScanningDIsplay.vue";
 import UserCard from "../composables/Cards/UserCard.vue";
@@ -121,6 +123,7 @@ import { useTopbarButtonState } from "../../../store/vueStore/topbarButtonState"
 import { ipcHandle } from "../../../ipc/ipcHandler";
 import { rfidScanner } from "../../services/utils";
 import { useToast } from "../../services/useToast";
+import { loadAccountRoles } from "../../../store/vueStore/Settings/accountRoles.js";
 
 import {
   getUserList,
@@ -144,10 +147,14 @@ const { toast } = useToast();
 const scanTimer = ref(timerValue); // 30 seconds timeout
 const users = ref([]);
 const userListModalFields = ref([]);
+const baseUserFields = ref([]);
 const payload = ref({});
 const pendingUserData = ref(null);
 const manualRfid = ref("");
 const devMode = ref(false);
+const accountRoles = ref([]);
+const showExpiryField = ref(false);
+const lastRoleId = ref(null);
 
 // New state for filtering and pagination
 const isLoading = ref(false);
@@ -195,7 +202,9 @@ onMounted(async () => {
   useTopbarButtonState().setButtonState("Add User", () => openModal("addMode"));
   syncDevMode();
   window.addEventListener("devmode-changed", syncDevMode);
-  userListModalFields.value = await getUserListModalFields();
+  accountRoles.value = await loadAccountRoles();
+  baseUserFields.value = await getUserListModalFields();
+  userListModalFields.value = baseUserFields.value;
   loadData();
 });
 
@@ -278,16 +287,19 @@ const openModal = (mode) => {
       isViewing.value = false;
       isDeleting.value = false;
       payload.value = {};
+      lastRoleId.value = null;
       break;
     case "editMode":
       isEditing.value = true;
       isViewing.value = false;
       isDeleting.value = false;
+      lastRoleId.value = payload.value?.account_role_id || null;
       break;
     case "viewMode":
       isViewing.value = true;
       isEditing.value = false;
       isDeleting.value = false;
+      lastRoleId.value = payload.value?.account_role_id || null;
       break;
     case "deleteMode":
       isDeleting.value = true;
@@ -295,6 +307,7 @@ const openModal = (mode) => {
       isViewing.value = false;
       break;
   }
+  updateFieldsForPayload(payload.value);
   if (inputDialog.value) {
     console.log("Opening modal");
     inputDialog.value.openModal();
@@ -322,6 +335,10 @@ const handleSubmit = async (data) => {
   } else {
     await createUserFunction(data);
   }
+};
+
+const handlePayloadChange = (newData) => {
+  updateFieldsForPayload(newData);
 };
 
 const updateUserFunction = async (data) => {
@@ -429,5 +446,48 @@ const handleManualRfid = async () => {
   }
 
   await processCreateUser(rfid, data);
+};
+
+const getExpiryMonths = (roleId) => {
+  const role = accountRoles.value.find(
+    (item) => Number(item.id) === Number(roleId)
+  );
+  return Number(role?.expiry_months) || 0;
+};
+
+const computeExpiryDate = (months) => {
+  return dayjs().add(months, "month").format("YYYY-MM-DD");
+};
+
+const updateFieldsForPayload = (data) => {
+  const expiryMonths = getExpiryMonths(data?.account_role_id);
+  const shouldShowExpiry = expiryMonths > 0;
+  showExpiryField.value = shouldShowExpiry;
+
+  let nextPayload = { ...data };
+  const roleChanged =
+    data?.account_role_id &&
+    Number(data.account_role_id) !== Number(lastRoleId.value);
+
+  if (!shouldShowExpiry) {
+    nextPayload.membership_expiry_date = null;
+  } else if (
+    roleChanged ||
+    !nextPayload.membership_expiry_date
+  ) {
+    nextPayload.membership_expiry_date = computeExpiryDate(expiryMonths);
+  }
+
+  lastRoleId.value = data?.account_role_id || null;
+
+  const nextFields = baseUserFields.value.filter(
+    (field) =>
+      field.field !== "membership_expiry_date" || showExpiryField.value
+  );
+  userListModalFields.value = nextFields;
+
+  if (JSON.stringify(payload.value) !== JSON.stringify(nextPayload)) {
+    payload.value = nextPayload;
+  }
 };
 </script>

@@ -179,6 +179,13 @@ const userListModalFields = [
 
     isRequired: true,
   },
+  {
+    field: "membership_expiry_date",
+    placeholder: "YYYY-MM-DD",
+    type: "date",
+    label: "Membership Expiry Date",
+    divClass: "col-span-1 lg:col-span-2",
+  },
 ];
 
 export async function getUserListModalFields() {

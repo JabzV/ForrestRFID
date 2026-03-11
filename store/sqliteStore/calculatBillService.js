@@ -23,11 +23,7 @@ function calculateBaseAmount(billableSeconds, rateAmount, rateUnit, rateValue) {
     return 0;
   }
 
-  if (rateUnit === 'hr' && value === 1) {
-    return (billableSeconds / 3600) * amount;
-  }
-
-  return Math.ceil(billableSeconds / (unitSeconds * value)) * amount;
+  return (billableSeconds / (unitSeconds * value)) * amount;
 }
 
 function calculateSurcharge(billableSeconds, session) {

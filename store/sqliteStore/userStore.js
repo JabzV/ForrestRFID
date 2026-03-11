@@ -1,4 +1,5 @@
 import db from '../../database.js';
+import dayjs from 'dayjs';
 
 export function getUsers() {
     const action = db.prepare(`
@@ -38,13 +39,51 @@ export function checkIfMember(rfid) {
 }
     
 export function createUser(data) {
-    const action = db.prepare('INSERT INTO users (rfid, first_name, last_name, email, contact_number, birthday, gender, account_role_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
-    return action.run(data.rfid, data.first_name, data.last_name, data.email, data.contact_number, data.birthday, data.gender, data.account_role_id).lastInsertRowid;
+    const expiryDate = resolveMembershipExpiryDate(data, true);
+    const action = db.prepare(`
+        INSERT INTO users (
+            rfid,
+            first_name,
+            last_name,
+            email,
+            contact_number,
+            birthday,
+            gender,
+            account_role_id,
+            membership_expiry_date
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `);
+    return action.run(
+        data.rfid,
+        data.first_name,
+        data.last_name,
+        data.email,
+        data.contact_number,
+        data.birthday,
+        data.gender,
+        data.account_role_id,
+        expiryDate
+    ).lastInsertRowid;
 }
 
 export function updateUser(data) {
-    const action = db.prepare('UPDATE users SET first_name = ?, last_name = ?, email = ?, contact_number = ?, birthday = ?, gender = ?, account_role_id = ? WHERE id = ?');
-    return action.run(data.first_name, data.last_name, data.email, data.contact_number, data.birthday, data.gender, data.account_role_id, data.id);
+    const expiryDate = resolveMembershipExpiryDate(data, false);
+    const action = db.prepare(`
+        UPDATE users
+        SET first_name = ?, last_name = ?, email = ?, contact_number = ?, birthday = ?, gender = ?, account_role_id = ?, membership_expiry_date = ?
+        WHERE id = ?
+    `);
+    return action.run(
+        data.first_name,
+        data.last_name,
+        data.email,
+        data.contact_number,
+        data.birthday,
+        data.gender,
+        data.account_role_id,
+        expiryDate,
+        data.id
+    );
 }
 
 export function deleteUser(id) {
@@ -55,5 +94,27 @@ export function deleteUser(id) {
     }
     // Then, delete the user
     return db.prepare('DELETE FROM users WHERE id = ?').run(id);
+}
+
+function resolveMembershipExpiryDate(data, isCreate) {
+    if (!data || !data.account_role_id) {
+        return null;
+    }
+
+    const role = db
+        .prepare('SELECT expiry_months FROM account_roles WHERE id = ?')
+        .get(data.account_role_id);
+    const expiryMonths = Number(role?.expiry_months) || 0;
+
+    if (expiryMonths <= 0) {
+        return null;
+    }
+
+    if (data.membership_expiry_date) {
+        return data.membership_expiry_date;
+    }
+
+    const baseDate = isCreate ? dayjs() : dayjs();
+    return baseDate.add(expiryMonths, 'month').format('YYYY-MM-DD');
 }
 

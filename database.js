@@ -16,6 +16,8 @@ import { createAuditTrailsTable } from "./database/migrations/audit_trails.js";
 import { addBillingSnapshotColumns } from "./database/migrations/add_billing_snapshot.js";
 import { addSessionProfileChargeImmediatelyColumn } from "./database/migrations/add_session_profile_charge_immediately.js";
 import { addSessionProfileRateValueAndSurchargeMinutes } from "./database/migrations/add_session_profile_rate_value_and_surcharge_minutes.js";
+import { addAccountRolesExpiryMonthsColumn } from "./database/migrations/add_account_roles_expiry_months.js";
+import { addUsersMembershipExpiryDateColumn } from "./database/migrations/add_users_membership_expiry_date.js";
 
 // Store DB in app's userData directory (persists across app updates)
 const userDataPath = app.getPath('userData');
@@ -46,6 +48,8 @@ createTimeLogsTable(db);
 addBillingSnapshotColumns(db);
 addSessionProfileChargeImmediatelyColumn(db);
 addSessionProfileRateValueAndSurchargeMinutes(db);
+addAccountRolesExpiryMonthsColumn(db);
+addUsersMembershipExpiryDateColumn(db);
 
 
 export default db;

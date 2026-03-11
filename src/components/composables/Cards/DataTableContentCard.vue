@@ -24,6 +24,16 @@
         >
           {{ Number(item) === 1 ? "Yes" : "No" }}
         </span>
+        <span
+          v-else-if="key === 'expiry_months'"
+          class="text-gray-800 font-medium flex justify-center"
+        >
+          {{
+            Number(item) > 0
+              ? `${item} month${Number(item) === 1 ? "" : "s"}`
+              : "None"
+          }}
+        </span>
         <span v-else class="text-gray-800 font-medium flex justify-center">{{
           item
         }}</span>

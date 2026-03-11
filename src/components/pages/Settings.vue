@@ -16,22 +16,15 @@
             max-height="max-h-96"
           >
             <!-- Table Header -->
-            <CustomDataTable
-              :headers="[
-                'Name',
-                'Rate',
-                'Unit',
-                'Price',
-                'Date Created',
-                'Actions',
-              ]"
-              gap-class="gap-4"
-            >
+          <CustomDataTable
+            :headers="['Name', 'Rate', 'Unit', 'Charge Immediately', 'Actions']"
+            gap-class="gap-4"
+          >
               <DataTableContentCard
                 v-for="profile in sessionProfiles"
                 :key="profile.id"
                 :item="profile"
-                :columnNumber="6"
+                :columnNumber="5"
                 gap-class="gap-4"
                 @edit="editProfile"
                 @delete="deleteProfile"
@@ -104,14 +97,14 @@
           @add="addRole"
         >
           <CustomDataTable
-            :headers="['Name', 'Discount', 'Type', 'Actions']"
+            :headers="['Name', 'Expiry', 'Discount', 'Type', 'Actions']"
             gap-class="gap-4"
           >
             <DataTableContentCard
               v-for="role in accountRoles"
               :key="role.id"
               :item="role"
-              :columnNumber="4"
+              :columnNumber="5"
               gap-class="gap-4"
               @edit="editRole"
               @delete="deleteRole"

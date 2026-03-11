@@ -13,7 +13,7 @@ export function createSessionConfigTable(db) {
     const count = db.prepare('SELECT COUNT(*) as count FROM session_config').get();
     if (count.count === 0) {
         db.prepare(`
-          INSERT INTO session_config (enable_promos, time_rounding, grace_period, minimum_billable_session) VALUES (1, 5, 3, 10)
+          INSERT INTO session_config (enable_promos, time_rounding, grace_period, minimum_billable_session) VALUES (1, 5, 1, 3)
         `).run();
     }
 }

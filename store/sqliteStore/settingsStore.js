@@ -10,6 +10,8 @@ import { createAuditTrailsTable } from "../../database/migrations/audit_trails.j
 import { addSessionProfileChargeImmediatelyColumn } from "../../database/migrations/add_session_profile_charge_immediately.js";
 import { addSessionProfileRateValueAndSurchargeMinutes } from "../../database/migrations/add_session_profile_rate_value_and_surcharge_minutes.js";
 import { addBillingSnapshotColumns } from "../../database/migrations/add_billing_snapshot.js";
+import { addAccountRolesExpiryMonthsColumn } from "../../database/migrations/add_account_roles_expiry_months.js";
+import { addUsersMembershipExpiryDateColumn } from "../../database/migrations/add_users_membership_expiry_date.js";
 
 //Session Profiles
 export function getSessionProfiles() {
@@ -139,18 +141,28 @@ export function updateSessionConfig(data) {
 
 //Account Roles
 export function getAccountRoles() {
-    const action = db.prepare('SELECT * FROM account_roles');
+    const action = db.prepare(`
+        SELECT
+            id,
+            name,
+            value,
+            benefits_type,
+            COALESCE(expiry_months, 0) AS expiry_months
+        FROM account_roles
+    `);
     return action.all();
 }
 
 export function createAccountRole(data) {
-    const action = db.prepare('INSERT INTO account_roles (name, benefits_type, value) VALUES (?, ?, ?)');
-    return action.run(data.name, data.benefits_type, data.value);
+    const action = db.prepare('INSERT INTO account_roles (name, benefits_type, value, expiry_months) VALUES (?, ?, ?, ?)');
+    const expiryMonths = Number(data.expiry_months) || 0;
+    return action.run(data.name, data.benefits_type, data.value, expiryMonths);
 }
 
 export function updateAccountRole(data) {
-    const action = db.prepare('UPDATE account_roles SET name = ?, benefits_type = ?, value = ? WHERE id = ?');
-    return action.run(data.name, data.benefits_type, data.value, data.id);
+    const action = db.prepare('UPDATE account_roles SET name = ?, benefits_type = ?, value = ?, expiry_months = ? WHERE id = ?');
+    const expiryMonths = Number(data.expiry_months) || 0;
+    return action.run(data.name, data.benefits_type, data.value, expiryMonths, data.id);
 }
 
 export function deleteAccountRole(id) {
@@ -209,6 +221,8 @@ export function resetDatabase() {
             addBillingSnapshotColumns(db);
             addSessionProfileChargeImmediatelyColumn(db);
             addSessionProfileRateValueAndSurchargeMinutes(db);
+            addAccountRolesExpiryMonthsColumn(db);
+            addUsersMembershipExpiryDateColumn(db);
 
             db.exec("PRAGMA foreign_keys = ON");
         });

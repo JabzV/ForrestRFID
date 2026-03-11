@@ -44,6 +44,28 @@ export const accountRolesModalFields = [
         isRequired: true,
     },
     {
+        field: "expiry_months",
+        label: "Expiry",
+        placeholder: "Expiry",
+        type: "dropdown",
+        isRequired: true,
+        options: [
+            { name: "None", id: 0 },
+            { name: "1 month", id: 1 },
+            { name: "2 months", id: 2 },
+            { name: "3 months", id: 3 },
+            { name: "4 months", id: 4 },
+            { name: "5 months", id: 5 },
+            { name: "6 months", id: 6 },
+            { name: "7 months", id: 7 },
+            { name: "8 months", id: 8 },
+            { name: "9 months", id: 9 },
+            { name: "10 months", id: 10 },
+            { name: "11 months", id: 11 },
+            { name: "12 months", id: 12 }
+        ],
+    },
+    {
         field: "benefits_type",
         label: "Benefits Type",
         placeholder: "Benefits Type",

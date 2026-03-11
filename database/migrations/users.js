@@ -10,6 +10,7 @@ export function createUsersTable(db) {
         gender TEXT NOT NULL,
         contact_number TEXT NULLABLE,
         email TEXT NULLABLE,
+        membership_expiry_date DATETIME NULLABLE,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         deleted_at DATETIME,

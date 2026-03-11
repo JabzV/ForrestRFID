@@ -35,8 +35,6 @@ export function createSessionProfilesTable(db) {
             ('Brownout - Hourly', 45, 'hr', 1, 0, 0, 0),
             ('Unlipass - Day', 240, 'day', 1, 0, 0, 1),
             ('Unlipass - Week', 750, 'week', 1, 0, 0, 1),
-            ('Membership - Green', 2500, 'month', 1, 0, 0, 1),
-            ('Membership - Gold', 10000, 'month', 6, 0, 0, 1),
             ('Private Room - Hourly', 100, 'hr', 1, 0, 0, 0),
             ('Private Room - Day', 650, 'day', 1, 0, 0, 0),
             ('Private Room - Week', 1500, 'week', 1, 0, 0, 0),

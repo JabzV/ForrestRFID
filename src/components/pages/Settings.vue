@@ -237,7 +237,12 @@ onBeforeUnmount(() => {
 });
 
 const loadData = async () => {
-  sessionProfiles.value = await getAllSessionProfiles();
+  sessionProfiles.value = (await getAllSessionProfiles()).map((profile) => ({
+    ...profile,
+    rate_value: profile.rate_value ?? 1,
+    surcharge_minutes: profile.surcharge_minutes ?? 0,
+    charge_immediately: profile.charge_immediately ?? 0,
+  }));
   sessionConfig.value = await loadSessionConfiguration();
   accountRoles.value = await loadAccountRoles();
   promos.value = await loadPromos();
@@ -252,14 +257,28 @@ const loadData = async () => {
   }
 };
 
+const normalizeSessionProfilePayload = (data) => ({
+  ...data,
+  rate_value:
+    data.rate_value === "" || data.rate_value == null ? 1 : data.rate_value,
+  surcharge_minutes:
+    data.surcharge_minutes === "" || data.surcharge_minutes == null
+      ? 0
+      : data.surcharge_minutes,
+  charge_immediately:
+    data.charge_immediately === "" || data.charge_immediately == null
+      ? 0
+      : data.charge_immediately,
+});
+
 const handleSubmit = async (data) => {
   try {
     switch (submitMode.value) {
       case "addProfile":
-        await createSessionProfile(data);
+        await createSessionProfile(normalizeSessionProfilePayload(data));
         break;
       case "editProfile":
-        await updateSessionProfile(data);
+        await updateSessionProfile(normalizeSessionProfilePayload(data));
         break;
       case "deleteProfile":
         await deleteSessionProfile(payload.value.id);
@@ -308,7 +327,17 @@ const addProfile = () => {
 };
 
 const editProfile = (profile) => {
-  openModal("Edit Profile", sessionProfileModalFields, profile, "editProfile");
+  openModal(
+    "Edit Profile",
+    sessionProfileModalFields,
+    {
+      ...profile,
+      rate_value: profile.rate_value ?? 1,
+      surcharge_minutes: profile.surcharge_minutes ?? 0,
+      charge_immediately: profile.charge_immediately ?? 0,
+    },
+    "editProfile"
+  );
 };
 
 const deleteProfile = (profile) => {

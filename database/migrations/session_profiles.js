@@ -33,7 +33,7 @@ export function createSessionProfilesTable(db) {
             ('Student - 3 Hours', 100, 'hr', 3, 0, 0, 0),
             ('Regular - Hourly', 40, 'hr', 1, 20, 20, 0),
             ('Brownout - Hourly', 45, 'hr', 1, 0, 0, 0),
-            ('Unlipass - Day', 240, 'day', 1, 0, 0, 0),
+            ('Unlipass - Day', 240, 'day', 1, 0, 0, 1),
             ('Unlipass - Week', 750, 'week', 1, 0, 0, 1),
             ('Membership - Green', 2500, 'month', 1, 0, 0, 1),
             ('Membership - Gold', 10000, 'month', 6, 0, 0, 1),

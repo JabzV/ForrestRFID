@@ -15,8 +15,8 @@
     <option
       v-for="option in options"
       class="text-lg text-black"
-      :key="option.id ? option.id : option"
-      :value="option.id ? option.id : option"
+      :key="option.id !== undefined ? option.id : option"
+      :value="option.id !== undefined ? option.id : option"
     >
       {{ option.name ? option.name : option }}
     </option>

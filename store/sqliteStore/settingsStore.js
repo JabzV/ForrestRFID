@@ -7,6 +7,9 @@ import { createUsersTable } from "../../database/migrations/users.js";
 import { createTimeLogsTable } from "../../database/migrations/time_logs.js";
 import { createPivotPromosToUserTable } from "../../database/migrations/pivot_promos_to_user.js";
 import { createAuditTrailsTable } from "../../database/migrations/audit_trails.js";
+import { addSessionProfileChargeImmediatelyColumn } from "../../database/migrations/add_session_profile_charge_immediately.js";
+import { addSessionProfileRateValueAndSurchargeMinutes } from "../../database/migrations/add_session_profile_rate_value_and_surcharge_minutes.js";
+import { addBillingSnapshotColumns } from "../../database/migrations/add_billing_snapshot.js";
 
 //Session Profiles
 export function getSessionProfiles() {
@@ -16,10 +19,10 @@ export function getSessionProfiles() {
             name,
             rate_amount,
             rate_unit,
-            rate_value,
+            COALESCE(rate_value, 1) AS rate_value,
             surcharge_amount,
-            surcharge_minutes,
-            charge_immediately,
+            COALESCE(surcharge_minutes, 0) AS surcharge_minutes,
+            COALESCE(charge_immediately, 0) AS charge_immediately,
             created_at,
             updated_at,
             deleted_at
@@ -35,10 +38,10 @@ export function getSessionProfile(id) {
             name,
             rate_amount,
             rate_unit,
-            rate_value,
+            COALESCE(rate_value, 1) AS rate_value,
             surcharge_amount,
-            surcharge_minutes,
-            charge_immediately,
+            COALESCE(surcharge_minutes, 0) AS surcharge_minutes,
+            COALESCE(charge_immediately, 0) AS charge_immediately,
             created_at,
             updated_at,
             deleted_at
@@ -179,20 +182,20 @@ export function deletePromo(id) {
 export function resetDatabase() {
     try {
         const resetTransaction = db.transaction(() => {
-            // Delete data in order to satisfy FK constraints
-            db.prepare('DELETE FROM pivot_promos_to_user').run();
-            db.prepare('DELETE FROM time_logs').run();
-            db.prepare('DELETE FROM audit_trails').run();
-            db.prepare('DELETE FROM users').run();
-            db.prepare('DELETE FROM promos').run();
-            db.prepare('DELETE FROM session_profiles').run();
-            db.prepare('DELETE FROM account_roles').run();
-            db.prepare('DELETE FROM session_config').run();
-            
-            // Reset autoincrement counters
-            db.prepare('DELETE FROM sqlite_sequence').run();
+            // Remigrate: drop and recreate tables, then re-seed
+            db.exec("PRAGMA foreign_keys = OFF");
+            db.exec(`
+                DROP TABLE IF EXISTS pivot_promos_to_user;
+                DROP TABLE IF EXISTS time_logs;
+                DROP TABLE IF EXISTS audit_trails;
+                DROP TABLE IF EXISTS users;
+                DROP TABLE IF EXISTS promos;
+                DROP TABLE IF EXISTS session_profiles;
+                DROP TABLE IF EXISTS account_roles;
+                DROP TABLE IF EXISTS session_config;
+            `);
 
-            // Re-run seeders (they only insert when tables are empty)
+            // Recreate tables (seeders run on empty tables)
             createAuditTrailsTable(db);
             createSessionConfigTable(db);
             createSessionProfilesTable(db);
@@ -201,6 +204,13 @@ export function resetDatabase() {
             createUsersTable(db);
             createPivotPromosToUserTable(db);
             createTimeLogsTable(db);
+
+            // Re-apply migrations that add/alter columns
+            addBillingSnapshotColumns(db);
+            addSessionProfileChargeImmediatelyColumn(db);
+            addSessionProfileRateValueAndSurchargeMinutes(db);
+
+            db.exec("PRAGMA foreign_keys = ON");
         });
 
         resetTransaction();
